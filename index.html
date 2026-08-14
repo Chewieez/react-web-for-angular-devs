@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Web for Angular Devs: Fast-Track Course</title>
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <header>
+    <h1>React Web for Angular Devs</h1>
+    <div class="subtitle">A tailored, high-density fast-track course for Angular engineers & leads transitioning to modern React Web (React 19, Next.js, TanStack Query, Zustand)</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>📚 Course Curriculum & Lessons</h2>
+      <table class="curriculum-table">
+        <thead>
+          <tr>
+            <th>Lesson #</th>
+            <th>Module Title</th>
+            <th>Core Topics</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>0001</strong></td>
+            <td><a href="./lessons/0001-angular-to-react-web-mental-model.html">Angular Lead to React Web Mental Model</a></td>
+            <td>Concept translation matrix, JSX compilation, uni-directional data flow vs 2-way binding.</td>
+            <td>✅ Active</td>
+          </tr>
+          <tr>
+            <td><strong>0002</strong></td>
+            <td>Angular Templates & Directives vs. JSX</td>
+            <td><code>*ngIf</code>, <code>*ngFor</code>, <code>[ngClass]</code>, <code>[ngStyle]</code>, pipes vs JSX expressions, <code>.map()</code>, <code>clsx</code>.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0003</strong></td>
+            <td>Components, Props & Content Projection</td>
+            <td><code>@Input()</code>, <code>@Output() EventEmitter</code>, <code>&lt;ng-content&gt;</code> vs <code>props</code>, callbacks, and <code>children</code> slot patterns.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0004</strong></td>
+            <td>State Management Fundamentals (Signals vs. useState)</td>
+            <td>Angular Signals (<code>signal</code>, <code>computed</code>, <code>effect</code>) vs React <code>useState</code>, <code>useMemo</code>, <code>useEffect</code>.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0005</strong></td>
+            <td>Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)</td>
+            <td><code>FormGroup</code>, <code>FormControl</code>, custom validators vs React Hook Form, controlled inputs, and Zod schemas.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0006</strong></td>
+            <td>Angular Services & DI vs. React Context & Custom Hooks</td>
+            <td><code>@Injectable({ providedIn: 'root' })</code> vs <code>createContext</code>, <code>&lt;Provider&gt;</code>, and composable custom hooks.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0007</strong></td>
+            <td>Lifecycle Hooks vs. useEffect & Refs</td>
+            <td><code>ngOnInit</code>, <code>ngOnDestroy</code>, <code>ngOnChanges</code>, <code>@ViewChild</code> vs <code>useEffect</code> dependency arrays, cleanup, and <code>useRef</code>.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0008</strong></td>
+            <td>Routing Architecture (RouterModule vs. React Router & Next.js)</td>
+            <td>Lazy loading, Route Guards (<code>CanActivate</code>), dynamic params, and layout route hierarchies.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0009</strong></td>
+            <td>HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)</td>
+            <td><code>HttpClient</code> Observables & <code>| async</code> pipe vs <code>fetch</code> + TanStack Query (<code>useQuery</code>, <code>useMutation</code>, caching).</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0010</strong></td>
+            <td>CSS & Component Styling Architecture</td>
+            <td>ViewEncapsulation (Emulated/ShadowDOM) & SCSS vs CSS Modules, Tailwind CSS, and CSS-in-JS.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0011</strong></td>
+            <td>Performance Optimization & Reconciliation</td>
+            <td>Zone.js vs Virtual DOM Reconciliation, <code>OnPush</code> strategy vs <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code>.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0012</strong></td>
+            <td>Complex Global State (NgRx vs. Zustand & Redux Toolkit)</td>
+            <td>Actions, Reducers, Effects, Selectors vs Zustand lightweight atomic stores and RTK slices.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0013</strong></td>
+            <td>Server-Side Rendering (SSR) & React Server Components (RSC)</td>
+            <td>Angular Universal / SSR Hydration vs Next.js App Router, RSC, <code>'use client'</code>, and streaming.</td>
+            <td>⏳ Pending</td>
+          </tr>
+          <tr>
+            <td><strong>0014</strong></td>
+            <td>Component & Integration Testing (TestBed vs. Vitest & RTL)</td>
+            <td><code>TestBed</code>, <code>By.css</code> vs Vitest + React Testing Library (<code>render</code>, <code>screen</code>, <code>userEvent</code>, accessibility queries).</td>
+            <td>⏳ Pending</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>💡 Quick Concept Translation Summary</h2>
+      <table class="curriculum-table">
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Component Template</strong></td>
+            <td>HTML Template (<code>templateUrl</code>)</td>
+            <td>JSX / TSX</td>
+          </tr>
+          <tr>
+            <td><strong>Input Property</strong></td>
+            <td><code>@Input() name: string</code></td>
+            <td><code>props.name</code> / <code>{ name }: Props</code></td>
+          </tr>
+          <tr>
+            <td><strong>Event Emission</strong></td>
+            <td><code>@Output() changed = new EventEmitter()</code></td>
+            <td>Callback Prop: <code>onChanged(val)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Conditionals</strong></td>
+            <td><code>*ngIf="condition"</code></td>
+            <td><code>{condition && &lt;Component /&gt;}</code> / Ternary</td>
+          </tr>
+          <tr>
+            <td><strong>Loops</strong></td>
+            <td><code>*ngFor="let item of items; trackBy: id"</code></td>
+            <td><code>{items.map(item => &lt;Component key={item.id} /&gt;)}</code></td>
+          </tr>
+          <tr>
+            <td><strong>Content Projection</strong></td>
+            <td><code>&lt;ng-content&gt;</code> / <code>&lt;ng-content select="..."&gt;</code></td>
+            <td><code>props.children</code> / Named Slot Props</td>
+          </tr>
+          <tr>
+            <td><strong>Reactive State</strong></td>
+            <td>Angular Signals (<code>signal()</code>) / <code>BehaviorSubject</code></td>
+            <td><code>useState()</code> Hook / Zustand</td>
+          </tr>
+          <tr>
+            <td><strong>Computed State</strong></td>
+            <td><code>computed(() => ...)</code></td>
+            <td><code>useMemo(() => ...)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Side Effects</strong></td>
+            <td><code>effect(() => ...)</code> / <code>ngOnInit</code></td>
+            <td><code>useEffect(() => ..., [deps])</code></td>
+          </tr>
+          <tr>
+            <td><strong>Root Service / DI</strong></td>
+            <td><code>@Injectable({ providedIn: 'root' })</code></td>
+            <td>React Context (<code>createContext</code>) / Custom Hook</td>
+          </tr>
+          <tr>
+            <td><strong>DOM Reference</strong></td>
+            <td><code>@ViewChild('myInput')</code></td>
+            <td><code>useRef&lt;HTMLInputElement&gt;(null)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Forms</strong></td>
+            <td><code>ReactiveFormsModule</code> (<code>FormGroup</code>)</td>
+            <td>React Hook Form (<code>useForm</code>) + Zod</td>
+          </tr>
+          <tr>
+            <td><strong>HTTP Fetching</strong></td>
+            <td><code>HttpClient</code> + RxJS</td>
+            <td><code>fetch</code> + TanStack React Query</td>
+          </tr>
+          <tr>
+            <td><strong>Change Detection</strong></td>
+            <td>Zone.js / Signal dirty checking</td>
+            <td>Virtual DOM Reconciliation + <code>React.memo</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web for Angular Devs Course &bull; <a href="https://github.com/Chewieez/react-web-for-angular-devs">GitHub Repository</a></p>
+  </footer>
+</body>
+</html>

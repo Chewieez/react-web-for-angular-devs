@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0001: Angular Lead to React Web Mental Model</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <h1>Lesson 0001: Angular Lead to React Web Mental Model</h1>
+    <div class="subtitle">Architectural comparison, compilation vs JSX transpilation, and uni-directional data flow</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. The Fundamental Paradigm Shift</h2>
+      <p>Angular is a <strong>complete, opinionated framework</strong> (batteries-included with DI, RxJS, Forms, Routing, and HttpClient). React is a <strong>declarative UI library</strong> focused purely on components and state reconciliation, surrounded by a rich ecosystem of standard libraries (Next.js, TanStack Query, React Hook Form, Zustand):</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Philosophy</strong></td>
+            <td>Opinionated, full-featured framework</td>
+            <td>Composable UI library + focused ecosystem</td>
+          </tr>
+          <tr>
+            <td><strong>Component Definition</strong></td>
+            <td>TypeScript Class + Decorators (<code>@Component</code>)</td>
+            <td>Pure Functional JavaScript/TypeScript Functions</td>
+          </tr>
+          <tr>
+            <td><strong>Template Language</strong></td>
+            <td>HTML Template syntax (<code>*ngIf</code>, <code>*ngFor</code>, interpolations)</td>
+            <td>JSX (JavaScript Syntax Extension)</td>
+          </tr>
+          <tr>
+            <td><strong>Data Binding</strong></td>
+            <td>Two-way binding (<code>[(ngModel)]</code>) & Signals</td>
+            <td>Strictly Uni-directional (Props down, events up)</td>
+          </tr>
+          <tr>
+            <td><strong>Change Detection</strong></td>
+            <td>Zone.js dirty checking or Signal graphs</td>
+            <td>Virtual DOM Diffing & Reconciliation</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. What is JSX? (JavaScript with HTML Superpowers)</h2>
+      <p>In Angular, templates are separate HTML strings compiled by the Angular compiler (Ivy). In React, JSX is syntactic sugar that compiles directly into standard JavaScript function calls (<code>React.createElement</code> or the modern JSX runtime):</p>
+
+      <pre><code>// 1. What you write in React (TSX):
+export function WelcomeBanner({ username }: { username: string }) {
+  return (
+    &lt;div className="banner"&gt;
+      &lt;h1&gt;Welcome back, {username}!&lt;/h1&gt;
+      &lt;p&gt;You have full access to your enterprise dashboard.&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}
+
+// 2. What it compiles to in JavaScript:
+import { jsx as _jsx, jsxs as _jsxs } from 'react/jsx-runtime';
+
+export function WelcomeBanner({ username }) {
+  return _jsxs('div', {
+    className: 'banner',
+    children: [
+      _jsxs('h1', { children: ['Welcome back, ', username, '!'] }),
+      _jsx('p', { children: 'You have full access to your enterprise dashboard.' }),
+    ],
+  });
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>3. Code Comparison: Basic Component Architecture</h2>
+      <p>Notice how Angular's class ceremony (`@Component`, `@Input`, `@Output`) translates into a concise, type-safe React functional component:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component</h3>
+          <pre><code>// user-card.component.ts
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'app-user-card',
+  template: `
+    &lt;div class="user-card"&gt;
+      &lt;h2&gt;{{ name }}&lt;/h2&gt;
+      &lt;button (click)="selected.emit(name)"&gt;Select&lt;/button&gt;
+    &lt;/div&gt;
+  `
+})
+export class UserCardComponent {
+  @Input() name!: string;
+  @Output() selected = new EventEmitter&lt;string&gt;();
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component</h3>
+          <pre><code>// UserCard.tsx
+interface UserCardProps {
+  name: string;
+  onSelect: (name: string) => void;
+}
+
+export function UserCard({ name, onSelect }: UserCardProps) {
+  return (
+    &lt;div className="user-card"&gt;
+      &lt;h2&gt;{name}&lt;/h2&gt;
+      &lt;button onClick={() => onSelect(name)}&gt;Select&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>No Class Instances</strong>: React functional components are executed from top to bottom on every state change. They do not maintain persistent `this` class properties.</li>
+          <li><strong>Plain JavaScript Everywhere</strong>: Instead of learning template micro-syntax (`*ngFor="let item of items; index as i; trackBy: trackById"`), you use standard JavaScript (`items.map((item, i) => ...)`).</li>
+          <li><strong>Types & Props</strong>: Types are checked with standard TypeScript interfaces without needing Angular decorators.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; Next: Lesson 0002 &rarr;</p>
+  </footer>
+</body>
+</html>

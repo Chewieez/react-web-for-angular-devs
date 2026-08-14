@@ -1,0 +1,176 @@
+:root {
+  --bg: #fffff8;
+  --text: #111111;
+  --accent: #d9381e;
+  --accent-blue: #0066cc;
+  --card-bg: #f4f4f0;
+  --code-bg: #2d2d2d;
+  --code-text: #f8f8f2;
+  --border: #e0e0dc;
+  --font-serif: "ETBook", "Georgia", "Palatino", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "Fira Code", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  overflow-x: hidden;
+}
+
+header {
+  border-bottom: 2px solid var(--text);
+  padding-bottom: 16px;
+  margin-bottom: 32px;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-weight: normal;
+  font-size: 2.4rem;
+  margin: 0 0 8px 0;
+  color: #000;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #555;
+  font-style: italic;
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  margin-top: 36px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+/* --- Tables --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  table-layout: fixed;
+  word-wrap: break-word;
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+th {
+  background-color: var(--card-bg);
+  font-weight: 600;
+}
+
+/* Inline code inside table cells should wrap */
+td code, th code {
+  word-break: break-all;
+}
+
+/*
+ * Index page curriculum table only:
+ * Scope fixed-width columns to the .curriculum-table class
+ * (add class="curriculum-table" to index.html table)
+ */
+.curriculum-table {
+  table-layout: auto;
+}
+
+.curriculum-table th:first-child,
+.curriculum-table td:first-child {
+  white-space: nowrap;
+  min-width: 95px;
+  width: 100px;
+}
+
+.curriculum-table th:last-child,
+.curriculum-table td:last-child {
+  white-space: nowrap;
+  min-width: 115px;
+  width: 125px;
+}
+
+/* --- Code blocks --- */
+pre {
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  max-width: 100%;
+}
+
+code {
+  background-color: var(--card-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  word-break: normal;
+}
+
+/* --- Callouts --- */
+.callout {
+  background-color: var(--card-bg);
+  border-left: 4px solid var(--accent-blue);
+  padding: 16px 20px;
+  margin: 24px 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.callout.tip {
+  border-left-color: #2e7d32;
+  background-color: #f1f8e9;
+}
+
+.callout.warning {
+  border-left-color: var(--accent);
+  background-color: #fff3e0;
+}
+
+/* --- Code Comparisons --- */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .code-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Footer --- */
+footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: #666;
+}
+
