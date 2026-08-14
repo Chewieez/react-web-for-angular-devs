@@ -44,7 +44,7 @@
           <tr>
             <td><strong><code>[ngClass]="{ active: isActive, error: isError }"</code></strong></td>
             <td><code>className={clsx({ active: isActive, error: isError })}</code></td>
-            <td>React uses standard HTML <code>className</code>. Dynamic classes are computed via template strings or utilities like <code>clsx</code>.</td>
+            <td>React uses standard HTML <code>className</code>. Dynamic classes are computed via utilities like <a href="https://www.npmjs.com/package/clsx" target="_blank" rel="noopener"><code>clsx</code></a> or template strings.</td>
           </tr>
           <tr>
             <td><strong><code>[ngStyle]="{ color: active ? 'blue' : 'gray' }"</code></strong></td>
@@ -63,6 +63,19 @@
           </tr>
         </tbody>
       </table>
+
+      <div class="callout tip">
+        <strong>📦 NPM Library Spotlight: <a href="https://www.npmjs.com/package/clsx" target="_blank" rel="noopener"><code>clsx</code></a></strong>
+        <p>In Angular, <code>[ngClass]</code> allows passing an object where keys are class names and values are booleans (e.g. <code>[ngClass]="{ 'active': isActive }"</code>). React's standard <code>className</code> prop only accepts plain strings. The industry-standard npm library to get the exact same object syntax is <a href="https://www.npmjs.com/package/clsx" target="_blank" rel="noopener"><strong><code>clsx</code></strong></a> (a tiny ~230B utility):</p>
+        <pre><code># Install clsx
+npm install clsx
+
+# Usage in React:
+import clsx from 'clsx';
+
+// Combines static & conditional classes seamlessly:
+&lt;button className={clsx('btn', 'btn-primary', { 'is-loading': loading, 'is-disabled': disabled })} /&gt;</code></pre>
+      </div>
     </section>
 
     <section>
@@ -123,7 +136,7 @@
           <h3>React Component (TSX + Plain JS)</h3>
           <pre><code>// UserList.tsx
 import React from 'react';
-import clsx from 'clsx';
+import clsx from 'clsx'; // npm install clsx
 
 interface User {
   id: string;
@@ -213,6 +226,7 @@ export function UserList({ users, isLoading }: UserListProps) {
     <section>
       <h2>5. Official Documentation References</h2>
       <ul>
+        <li><a href="https://www.npmjs.com/package/clsx" target="_blank" rel="noopener"><strong>clsx (npm)</strong></a>: Tiny utility for constructing <code>className</code> strings conditionally.</li>
         <li><a href="https://react.dev/learn/conditional-rendering" target="_blank" rel="noopener">React Official Docs — Conditional Rendering</a></li>
         <li><a href="https://react.dev/learn/rendering-lists" target="_blank" rel="noopener">React Official Docs — Rendering Lists & Keys</a></li>
         <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl" target="_blank" rel="noopener">MDN Web Docs — Intl (Internationalization API)</a></li>
