@@ -11,7 +11,7 @@ Rather than starting from zero with basic HTML/JS programming concepts, this cou
 | Lesson # | Module Title | Core Topics | Status |
 | :--- | :--- | :--- | :--- |
 | **0001** | [**Angular Lead to React Web Mental Model**](./lessons/0001-angular-to-react-web-mental-model.html) | Concept translation matrix, JSX compilation, uni-directional data flow vs 2-way binding. | ✅ Active |
-| **0002** | **Angular Templates & Directives vs. JSX** | `*ngIf`, `*ngFor`, `[ngClass]`, `[ngStyle]`, pipes vs JSX expressions, `.map()`, `clsx`. | ⏳ Pending |
+| **0002** | [**Angular Templates & Directives vs. JSX**](./lessons/0002-angular-templates-directives-vs-jsx.html) | `*ngIf`, `*ngFor`, `[ngClass]`, `[ngStyle]`, pipes vs JSX expressions, `.map()`, `clsx`. | ✅ Active |
 | **0003** | **Components, Props & Content Projection** | `@Input()`, `@Output() EventEmitter`, `<ng-content>` vs `props`, callbacks, and `children` slot patterns. | ⏳ Pending |
 | **0004** | **State Management Fundamentals (Signals vs. useState)** | Angular Signals (`signal`, `computed`, `effect`) vs React `useState`, `useMemo`, `useEffect`. | ⏳ Pending |
 | **0005** | **Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)** | `FormGroup`, `FormControl`, custom validators vs React Hook Form, controlled inputs, and Zod schemas. | ⏳ Pending |

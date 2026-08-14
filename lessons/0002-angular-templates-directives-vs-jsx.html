@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0002: Angular Templates & Directives vs. JSX</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <h1>Lesson 0002: Angular Templates & Directives vs. JSX</h1>
+    <div class="subtitle">Translating *ngIf, *ngFor, [ngClass], [ngStyle], and pipes to standard JavaScript expressions, .map(), and modern utilities</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Template Directives vs. JavaScript Expressions</h2>
+      <p>Angular uses a domain-specific template language processed by the Angular compiler (Ivy), providing built-in structural directives (<code>*ngIf</code>, <code>*ngFor</code>, <code>*ngSwitch</code>) or modern control flow blocks (<code>@if</code>, <code>@for</code>, <code>@switch</code>). In React, there is <strong>no template micro-syntax</strong>: JSX is simply JavaScript expressions that evaluate to React elements.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Angular Directive / Pattern</th>
+            <th>React JSX Equivalent</th>
+            <th>Underlying Architectural Difference</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong><code>*ngIf="isOpen"</code></strong> or <strong><code>@if (isOpen)</code></strong></td>
+            <td><code>{isOpen && &lt;Modal /&gt;}</code></td>
+            <td>Short-circuit JS logical AND. If truthy, the right-hand JSX element is returned and rendered.</td>
+          </tr>
+          <tr>
+            <td><strong><code>*ngIf="auth; else guest"</code></strong></td>
+            <td><code>{auth ? &lt;Dashboard /&gt; : &lt;Guest /&gt;}</code></td>
+            <td>Ternary expression (or early return pattern inside component function).</td>
+          </tr>
+          <tr>
+            <td><strong><code>*ngFor="let item of list; trackBy: id"</code></strong> or <strong><code>@for (item of list; track item.id)</code></strong></td>
+            <td><code>{list.map(item =&gt; &lt;Row key={item.id} item={item} /&gt;)}</code></td>
+            <td>Standard <code>Array.prototype.map()</code> returning an array of JSX nodes. <code>key</code> provides Virtual DOM identity.</td>
+          </tr>
+          <tr>
+            <td><strong><code>[ngClass]="{ active: isActive, error: isError }"</code></strong></td>
+            <td><code>className={clsx({ active: isActive, error: isError })}</code></td>
+            <td>React uses standard HTML <code>className</code>. Dynamic classes are computed via template strings or utilities like <code>clsx</code>.</td>
+          </tr>
+          <tr>
+            <td><strong><code>[ngStyle]="{ color: active ? 'blue' : 'gray' }"</code></strong></td>
+            <td><code>style={{ color: active ? 'blue' : 'gray' }}</code></td>
+            <td>React <code>style</code> prop accepts a JavaScript object with camelCase properties (e.g. <code>backgroundColor</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>Pipes (<code>{{ date | date:'short' }}</code>)</strong></td>
+            <td><code>{formatDate(date)}</code> or <code>Intl.DateTimeFormat</code></td>
+            <td>React has no Pipe concept. Formatting is handled via pure JavaScript helper functions or standard web APIs.</td>
+          </tr>
+          <tr>
+            <td><strong><code>&lt;ng-container&gt;</code></strong></td>
+            <td><code>&lt;&gt;...&lt;/&gt;</code> (<code>&lt;React.Fragment&gt;</code>)</td>
+            <td>Invisible wrapper grouping sibling nodes without adding an extra DOM element.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Deep Dive: List Reconciliation (`trackBy` vs. `key`)</h2>
+      <p>In Angular, <code>trackBy</code> (or `@for (...; track id)`) tells the change detector how to identify which DOM nodes moved, changed, or were removed. In React, the <code>key</code> prop serves the identical purpose during Virtual DOM reconciliation:</p>
+
+      <div class="callout tip">
+        <strong>The Rule of Keys</strong>:
+        <ul>
+          <li><strong>Unique & Stable</strong>: Always use unique IDs from your data model (e.g. <code>item.id</code>).</li>
+          <li><strong>Never use array index if the list mutates</strong>: Using <code>key={index}</code> breaks component state, animations, and input focus when items are inserted, removed, or sorted.</li>
+          <li><strong>Top-Level Placement</strong>: The <code>key</code> prop must always be placed on the outermost JSX element returned inside the <code>.map()</code> callback.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: User Directory with Filtering & Formatting</h2>
+      <p>Compare how an interactive user list with conditional badges, dynamic status classes, and date formatting is implemented in Angular vs React:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (HTML Template)</h3>
+          <pre><code>&lt;!-- user-list.component.html --&gt;
+&lt;div class="directory"&gt;
+  &lt;h2&gt;Team Directory ({{ users.length }})&lt;/h2&gt;
+
+  &lt;!-- Conditional rendering --&gt;
+  &lt;div *ngIf="isLoading; else listContent" class="loader"&gt;
+    Loading team members...
+  &lt;/div&gt;
+
+  &lt;ng-template #listContent&gt;
+    &lt;p *ngIf="users.length === 0" class="empty"&gt;
+      No team members found.
+    &lt;/p&gt;
+
+    &lt;ul class="user-list"&gt;
+      &lt;!-- List iteration with trackBy --&gt;
+      &lt;li
+        *ngFor="let user of users; trackBy: trackByUserId"
+        class="user-row"
+        [ngClass]="{ 'is-admin': user.role === 'admin', 'is-offline': !user.isOnline }"
+        [ngStyle]="{ borderLeftColor: user.themeColor }"
+      &gt;
+        &lt;span class="user-name"&gt;{{ user.name }}&lt;/span&gt;
+        &lt;span *ngIf="user.role === 'admin'" class="badge"&gt;Admin&lt;/span&gt;
+        
+        &lt;!-- Pipe formatting --&gt;
+        &lt;time&gt;Joined: {{ user.joinedAt | date:'mediumDate' }}&lt;/time&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/ng-template&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (TSX + Plain JS)</h3>
+          <pre><code>// UserList.tsx
+import React from 'react';
+import clsx from 'clsx';
+
+interface User {
+  id: string;
+  name: string;
+  role: 'admin' | 'member';
+  isOnline: boolean;
+  themeColor: string;
+  joinedAt: string;
+}
+
+interface UserListProps {
+  users: User[];
+  isLoading: boolean;
+}
+
+// Pure JS formatter (replaces Angular DatePipe)
+function formatDate(isoString: string): string {
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(isoString));
+}
+
+export function UserList({ users, isLoading }: UserListProps) {
+  if (isLoading) {
+    return &lt;div className="loader"&gt;Loading team members...&lt;/div&gt;;
+  }
+
+  return (
+    &lt;div className="directory"&gt;
+      &lt;h2&gt;Team Directory ({users.length})&lt;/h2&gt;
+
+      {users.length === 0 ? (
+        &lt;p className="empty"&gt;No team members found.&lt;/p&gt;
+      ) : (
+        &lt;ul className="user-list"&gt;
+          {users.map((user) => (
+            &lt;li
+              key={user.id}
+              className={clsx('user-row', {
+                'is-admin': user.role === 'admin',
+                'is-offline': !user.isOnline,
+              })}
+              style={{ borderLeftColor: user.themeColor }}
+            &gt;
+              &lt;span className="user-name"&gt;{user.name}&lt;/span&gt;
+              {user.role === 'admin' && &lt;span className="badge"&gt;Admin&lt;/span&gt;}
+              &lt;time&gt;Joined: {formatDate(user.joinedAt)}&lt;/time&gt;
+            &lt;/li&gt;
+          ))}
+        &lt;/ul&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Critical JSX Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>The <code>0 && &lt;Component /&gt;</code> Trap</strong>:
+            <br>
+            In JavaScript, <code>0 && "anything"</code> evaluates to <code>0</code> (not <code>false</code>). If <code>unreadCount = 0</code>, writing <code>{unreadCount && &lt;Badge /&gt;}</code> will render a literal <code>0</code> onto your screen!
+            <br>
+            <em>Fix:</em> Explicitly cast to boolean: <code>{unreadCount &gt; 0 && &lt;Badge /&gt;}</code> or <code>{Boolean(unreadCount) && &lt;Badge /&gt;}</code>.
+          </li>
+          <li>
+            <strong>HTML Attributes are CamelCase in React</strong>:
+            <br>
+            Use <code>className</code> (not <code>class</code>), <code>htmlFor</code> (not <code>for</code>), <code>tabIndex</code> (not <code>tabindex</code>), and <code>onClick</code> (not <code>(click)</code> or <code>onclick</code>).
+          </li>
+          <li>
+            <strong>Inline Styles are Objects, Not Strings</strong>:
+            <br>
+            In Angular you might write <code>style="background-color: red;"</code> or <code>[style.background-color]="color"</code>. In React, pass a JavaScript object: <code>style={{ backgroundColor: color }}</code>.
+          </li>
+          <li>
+            <strong>Returning Sibling Elements</strong>:
+            <br>
+            JSX components must return a single root element. If you don't want a wrapper <code>&lt;div&gt;</code> in the DOM, use React Fragments: <code>&lt;&gt;&lt;Header /&gt;&lt;Main /&gt;&lt;/&gt;</code> (equivalent to <code>&lt;ng-container&gt;</code>).
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References</h2>
+      <ul>
+        <li><a href="https://react.dev/learn/conditional-rendering" target="_blank" rel="noopener">React Official Docs — Conditional Rendering</a></li>
+        <li><a href="https://react.dev/learn/rendering-lists" target="_blank" rel="noopener">React Official Docs — Rendering Lists & Keys</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl" target="_blank" rel="noopener">MDN Web Docs — Intl (Internationalization API)</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0001-angular-to-react-web-mental-model.html">&larr; Previous: Lesson 0001</a> &bull; Next: Lesson 0003 &rarr;</p>
+  </footer>
+</body>
+</html>
