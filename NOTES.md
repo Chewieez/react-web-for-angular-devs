@@ -2,6 +2,9 @@
 
 - **Background**: Senior Front-End Dev / Team Lead with extensive Angular experience.
 - **Learning Style**: Fast-paced conceptual translation (Angular -> React Web), architectural comparisons, real-world patterns, minimal beginner fluff.
+- **Lesson Formatting Conventions**:
+  - Always use the 3-column translation matrix table: `Concept | Angular (Web) | React (Web)`.
+  - Focus on direct conceptual/skill translation between Angular and React.
 - **Key Analogies & Bridges**:
   - `@Input()` -> Component `props`
   - `@Output() EventEmitter` -> Callback props (`onAction={handleAction}`)

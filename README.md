@@ -12,8 +12,8 @@ Rather than starting from zero with basic HTML/JS programming concepts, this cou
 | :--- | :--- | :--- | :--- |
 | **0001** | [**Angular Lead to React Web Mental Model**](./lessons/0001-angular-to-react-web-mental-model.html) | Concept translation matrix, JSX compilation, uni-directional data flow vs 2-way binding. | ✅ Active |
 | **0002** | [**Angular Templates & Directives vs. JSX**](./lessons/0002-angular-templates-directives-vs-jsx.html) | `*ngIf`, `*ngFor`, `[ngClass]`, `[ngStyle]`, pipes vs JSX expressions, `.map()`, `clsx`. | ✅ Active |
-| **0003** | **Components, Props & Content Projection** | `@Input()`, `@Output() EventEmitter`, `<ng-content>` vs `props`, callbacks, and `children` slot patterns. | ⏳ Pending |
-| **0004** | **State Management Fundamentals (Signals vs. useState)** | Angular Signals (`signal`, `computed`, `effect`) vs React `useState`, `useMemo`, `useEffect`. | ⏳ Pending |
+| **0003** | [**Components, Props & Content Projection**](./lessons/0003-components-props-content-projection.html) | `@Input()`, `@Output() EventEmitter`, `<ng-content>` vs `props`, callbacks, and `children` slot patterns. | ✅ Active |
+| **0004** | [**State Management Fundamentals (Signals vs. useState)**](./lessons/0004-state-management-signals-vs-use-state.html) | Angular Signals (`signal`, `computed`, `effect`) vs React `useState`, `useMemo`, `useEffect`. | ✅ Active |
 | **0005** | **Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)** | `FormGroup`, `FormControl`, custom validators vs React Hook Form, controlled inputs, and Zod schemas. | ⏳ Pending |
 | **0006** | **Angular Services & DI vs. React Context & Custom Hooks** | `@Injectable({ providedIn: 'root' })` vs `createContext`, `<Provider>`, and composable custom hooks. | ⏳ Pending |
 | **0007** | **Lifecycle Hooks vs. useEffect & Refs** | `ngOnInit`, `ngOnDestroy`, `ngOnChanges`, `@ViewChild` vs `useEffect` dependency arrays, cleanup, and `useRef`. | ⏳ Pending |

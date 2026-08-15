@@ -20,46 +20,46 @@
       <table>
         <thead>
           <tr>
-            <th>Angular Directive / Pattern</th>
-            <th>React JSX Equivalent</th>
-            <th>Underlying Architectural Difference</th>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong><code>*ngIf="isOpen"</code></strong> or <strong><code>@if (isOpen)</code></strong></td>
-            <td><code>{isOpen && &lt;Modal /&gt;}</code></td>
-            <td>Short-circuit JS logical AND. If truthy, the right-hand JSX element is returned and rendered.</td>
+            <td><strong>Conditional Rendering</strong></td>
+            <td><code>*ngIf="isOpen"</code> or <code>@if (isOpen)</code></td>
+            <td><code>{isOpen &amp;&amp; &lt;Modal /&gt;}</code></td>
           </tr>
           <tr>
-            <td><strong><code>*ngIf="auth; else guest"</code></strong></td>
+            <td><strong>If / Else Branching</strong></td>
+            <td><code>*ngIf="auth; else guest"</code></td>
             <td><code>{auth ? &lt;Dashboard /&gt; : &lt;Guest /&gt;}</code></td>
-            <td>Ternary expression (or early return pattern inside component function).</td>
           </tr>
           <tr>
-            <td><strong><code>*ngFor="let item of list; trackBy: id"</code></strong> or <strong><code>@for (item of list; track item.id)</code></strong></td>
+            <td><strong>List Iteration &amp; Keys</strong></td>
+            <td><code>*ngFor="let item of list; trackBy: id"</code> or <code>@for (item of list; track item.id)</code></td>
             <td><code>{list.map(item =&gt; &lt;Row key={item.id} item={item} /&gt;)}</code></td>
-            <td>Standard <code>Array.prototype.map()</code> returning an array of JSX nodes. <code>key</code> provides Virtual DOM identity.</td>
           </tr>
           <tr>
-            <td><strong><code>[ngClass]="{ active: isActive, error: isError }"</code></strong></td>
+            <td><strong>Conditional Classes</strong></td>
+            <td><code>[ngClass]="{ active: isActive, error: isError }"</code></td>
             <td><code>className={clsx({ active: isActive, error: isError })}</code></td>
-            <td>React uses standard HTML <code>className</code>. Dynamic classes are computed via utilities like <a href="https://www.npmjs.com/package/clsx" target="_blank" rel="noopener"><code>clsx</code></a> or template strings.</td>
           </tr>
           <tr>
-            <td><strong><code>[ngStyle]="{ color: active ? 'blue' : 'gray' }"</code></strong></td>
+            <td><strong>Dynamic Inline Styles</strong></td>
+            <td><code>[ngStyle]="{ color: active ? 'blue' : 'gray' }"</code></td>
             <td><code>style={{ color: active ? 'blue' : 'gray' }}</code></td>
-            <td>React <code>style</code> prop accepts a JavaScript object with camelCase properties (e.g. <code>backgroundColor</code>).</td>
           </tr>
           <tr>
-            <td><strong>Pipes (<code>{{ date | date:'short' }}</code>)</strong></td>
+            <td><strong>Data Formatting (Pipes)</strong></td>
+            <td><code>{{ date | date:'short' }}</code></td>
             <td><code>{formatDate(date)}</code> or <code>Intl.DateTimeFormat</code></td>
-            <td>React has no Pipe concept. Formatting is handled via pure JavaScript helper functions or standard web APIs.</td>
           </tr>
           <tr>
-            <td><strong><code>&lt;ng-container&gt;</code></strong></td>
+            <td><strong>Wrapper / Fragments</strong></td>
+            <td><code>&lt;ng-container&gt;...&lt;/ng-container&gt;</code></td>
             <td><code>&lt;&gt;...&lt;/&gt;</code> (<code>&lt;React.Fragment&gt;</code>)</td>
-            <td>Invisible wrapper grouping sibling nodes without adding an extra DOM element.</td>
           </tr>
         </tbody>
       </table>
@@ -235,7 +235,7 @@ export function UserList({ users, isLoading }: UserListProps) {
   </main>
 
   <footer>
-    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0001-angular-to-react-web-mental-model.html">&larr; Previous: Lesson 0001</a> &bull; Next: Lesson 0003 &rarr;</p>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0001-angular-to-react-web-mental-model.html">&larr; Previous: Lesson 0001</a> &bull; <a href="./0003-components-props-content-projection.html">Next: Lesson 0003 &rarr;</a></p>
   </footer>
 </body>
 </html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0003: Components, Props & Content Projection</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <h1>Lesson 0003: Components, Props & Content Projection</h1>
+    <div class="subtitle">Translating @Input, @Output EventEmitter, &lt;ng-content&gt;, and &lt;ng-template&gt; to Props, Callbacks, children, Named Slots, and Render Props</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Inputs & Outputs vs. Props & Callbacks</h2>
+      <p>In Angular, components are stateful classes decorated with <code>@Component()</code>. Data flows in via <code>@Input()</code> decorators (or Angular 17+ <code>input()</code> signals) and out via <code>@Output()</code> <code>EventEmitter</code> instances (or <code>output()</code>). In React, components are pure or semi-pure JavaScript functions, and both inputs and event listeners are passed in a single unified <strong><code>props</code></strong> argument.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Input Properties</strong></td>
+            <td><code>@Input() title: string;</code> or <code>input.required&lt;string&gt;()</code></td>
+            <td><code>interface Props { title: string; }</code><br><code>function Header({ title }: Props)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Default Prop Values</strong></td>
+            <td><code>@Input() size: 'sm' | 'lg' = 'sm';</code></td>
+            <td><code>function Button({ size = 'sm' }: Props)</code><br><em>(ES6 destructuring default)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Event Emission</strong></td>
+            <td><code>@Output() select = new EventEmitter&lt;User&gt;();</code><br><code>this.select.emit(user);</code></td>
+            <td><code>interface Props { onSelect: (user: User) =&gt; void; }</code><br><code>onSelect(user);</code> <em>(Callback prop)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Single-Slot Content Projection</strong></td>
+            <td><code>&lt;ng-content&gt;&lt;/ng-content&gt;</code></td>
+            <td><code>children: React.ReactNode</code><br><code>&lt;div&gt;{children}&lt;/div&gt;</code></td>
+          </tr>
+          <tr>
+            <td><strong>Multi-Slot Projection</strong></td>
+            <td><code>&lt;ng-content select="[header]"&gt;</code><br><code>&lt;ng-content select="[footer]"&gt;</code></td>
+            <td><strong>Named Slot Props:</strong><br><code>header?: React.ReactNode</code><br><code>footer?: React.ReactNode</code></td>
+          </tr>
+          <tr>
+            <td><strong>Contextual Projection / Outlets</strong></td>
+            <td><code>&lt;ng-template let-item="item"&gt;</code><br><code>*ngTemplateOutlet="tpl; context: { item: x }"</code></td>
+            <td><strong>Render Props Pattern:</strong><br><code>renderItem: (item: T) =&gt; React.ReactNode</code><br><code>{renderItem(item)}</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Content Projection: 4 Core Patterns in React</h2>
+      <p>Angular developers rely heavily on <code>&lt;ng-content&gt;</code> for container components. In React, JSX is first-class data (objects), which makes component composition much more flexible:</p>
+
+      <div class="callout tip">
+        <strong>Pattern 1: The Default <code>children</code> Slot</strong>
+        <p>Any JSX placed between opening and closing component tags is received as <code>props.children</code> (typed as <code>React.ReactNode</code>):</p>
+        <pre><code>interface CardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+export function Card({ title, children }: CardProps) {
+  return (
+    &lt;div className="card"&gt;
+      &lt;h3 className="card-title"&gt;{title}&lt;/h3&gt;
+      &lt;div className="card-body"&gt;{children}&lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>Pattern 2: Multi-Slot Projection via Named Slot Props</strong>
+        <p>In Angular, you use CSS selector multi-slot projection: <code>&lt;ng-content select="[card-header]"&gt;</code>. In React, simply define separate props of type <code>React.ReactNode</code>:</p>
+        <pre><code>interface ModalProps {
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  isOpen: boolean;
+}
+
+export function Modal({ header, footer, children, isOpen }: ModalProps) {
+  if (!isOpen) return null;
+  return (
+    &lt;div className="modal-backdrop"&gt;
+      &lt;div className="modal-dialog"&gt;
+        {header &amp;&amp; &lt;div className="modal-header"&gt;{header}&lt;/div&gt;}
+        &lt;div className="modal-body"&gt;{children}&lt;/div&gt;
+        {footer &amp;&amp; &lt;div className="modal-footer"&gt;{footer}&lt;/div&gt;}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+// Consumer Usage:
+&lt;Modal
+  isOpen={isOpen}
+  header={&lt;h2&gt;Confirm Deletion&lt;/h2&gt;}
+  footer={&lt;button onClick={handleDelete}&gt;Delete&lt;/button&gt;}
+&gt;
+  &lt;p&gt;Are you sure you want to permanently delete this user?&lt;/p&gt;
+&lt;/Modal&gt;</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>Pattern 3: Contextual Projection via Render Props (Template Outlets)</strong>
+        <p>In Angular, when you need a reusable list or table component where the parent defines how each row looks, you use <code>&lt;ng-template let-user="user"&gt;</code> with <code>*ngTemplateOutlet</code>. In React, this is a <strong>Render Prop</strong> (a callback prop that accepts item data and returns JSX):</p>
+        <pre><code>interface ListProps&lt;T&gt; {
+  items: T[];
+  renderItem: (item: T, index: number) =&gt; React.ReactNode;
+  keyExtractor: (item: T) =&gt; string | number;
+}
+
+export function List&lt;T&gt;({ items, renderItem, keyExtractor }: ListProps&lt;T&gt;) {
+  return (
+    &lt;ul className="list-container"&gt;
+      {items.map((item, index) =&gt; (
+        &lt;li key={keyExtractor(item)} className="list-row"&gt;
+          {renderItem(item, index)}
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}
+
+// Consumer Usage:
+&lt;List
+  items={users}
+  keyExtractor={(u) =&gt; u.id}
+  renderItem={(user) =&gt; (
+    &lt;div className="user-badge"&gt;
+      &lt;strong&gt;{user.name}&lt;/strong&gt; &lt;span&gt;({user.role})&lt;/span&gt;
+    &lt;/div&gt;
+  )}
+/&gt;</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Enterprise Modal Component</h2>
+      <p>Compare an enterprise modal dialog featuring multi-slot projection (header, footer, body), prop inputs, and dismissal event outputs in Angular vs. React:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (TypeScript + HTML)</h3>
+          <pre><code>// modal.component.ts
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'app-modal',
+  templateUrl: './modal.component.html',
+  styleUrls: ['./modal.component.css']
+})
+export class ModalComponent {
+  @Input() isOpen = false;
+  @Input() size: 'sm' | 'md' | 'lg' = 'md';
+  @Output() closed = new EventEmitter&lt;void&gt;();
+
+  close(): void {
+    this.closed.emit();
+  }
+}
+
+&lt;!-- modal.component.html --&gt;
+&lt;div *ngIf="isOpen" class="modal-overlay" (click)="close()"&gt;
+  &lt;div class="modal-box modal-{{ size }}" (click)="$event.stopPropagation()"&gt;
+    
+    &lt;!-- Header Slot --&gt;
+    &lt;div class="modal-header"&gt;
+      &lt;ng-content select="[slot-header]"&gt;&lt;/ng-content&gt;
+      &lt;button class="close-btn" (click)="close()"&gt;&amp;times;&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Default Body Slot --&gt;
+    &lt;div class="modal-body"&gt;
+      &lt;ng-content&gt;&lt;/ng-content&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Footer Slot --&gt;
+    &lt;div class="modal-footer"&gt;
+      &lt;ng-content select="[slot-footer]"&gt;&lt;/ng-content&gt;
+    &lt;/div&gt;
+
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (TSX + Functional Props)</h3>
+          <pre><code>// Modal.tsx
+import React from 'react';
+import clsx from 'clsx';
+
+export interface ModalProps {
+  isOpen: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  onClose: () => void;
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+export function Modal({
+  isOpen,
+  size = 'md',
+  onClose,
+  header,
+  footer,
+  children,
+}: ModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    &lt;div className="modal-overlay" onClick={onClose}&gt;
+      &lt;div
+        className={clsx('modal-box', `modal-${size}`)}
+        onClick={(e) =&gt; e.stopPropagation()}
+      &gt;
+        {/* Header Slot */}
+        &lt;div className="modal-header"&gt;
+          &lt;div className="header-title"&gt;{header}&lt;/div&gt;
+          &lt;button className="close-btn" onClick={onClose}&gt;
+            &amp;times;
+          &lt;/button&gt;
+        &lt;/div&gt;
+
+        {/* Default Body Slot */}
+        &lt;div className="modal-body"&gt;{children}&lt;/div&gt;
+
+        {/* Footer Slot */}
+        {footer &amp;&amp; &lt;div className="modal-footer"&gt;{footer}&lt;/div&gt;}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Critical Differences &amp; Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Props are Strictly Immutable (Read-Only)</strong>:
+            <br>
+            In Angular, modifying an <code>@Input()</code> property (e.g. <code>this.user.name = 'Alice'</code>) will physically mutate the parent object, causing unpredictable bugs. In React, mutating <code>props</code> is strictly forbidden. Any change to data must be signaled via callback to the parent component that owns the state.
+          </li>
+          <li>
+            <strong>Avoid <code>React.FC</code> (FunctionComponent)</strong>:
+            <br>
+            Early React TypeScript tutorials used <code>const Modal: React.FC&lt;Props&gt; = ...</code>. Modern React TypeScript best practice is standard function declaration with typed props: <code>export function Modal({ isOpen }: ModalProps)</code>.
+          </li>
+          <li>
+            <strong><code>React.ReactNode</code> vs <code>React.ReactElement</code></strong>:
+            <br>
+            Always type <code>children</code> and slots as <code>React.ReactNode</code>. <code>ReactNode</code> includes everything React can render (JSX elements, strings, numbers, fragments, booleans, null, arrays). <code>ReactElement</code> only represents a single JSX object.
+          </li>
+          <li>
+            <strong>Slot Fallbacks</strong>:
+            <br>
+            In Angular, conditional fallback content inside <code>&lt;ng-content&gt;</code> is tricky. In React, it is standard JavaScript: <code>{header ?? &lt;h2&gt;Default Header&lt;/h2&gt;}</code>.
+          </li>
+          <li>
+            <strong>Solving Prop Drilling with Composition</strong>:
+            <br>
+            In Angular, developers often create a service to avoid passing inputs through 3 levels of child components. In React, passing components as <code>children</code> or slot props lets parent components compose directly, bypassing intermediate components completely without needing global state!
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References</h2>
+      <ul>
+        <li><a href="https://react.dev/learn/passing-props-to-a-component" target="_blank" rel="noopener">React Official Docs — Passing Props to a Component</a></li>
+        <li><a href="https://react.dev/learn/extracting-state-logic-into-a-reducer" target="_blank" rel="noopener">React Official Docs — Component Architecture &amp; Composition</a></li>
+        <li><a href="https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/basic_type_example/" target="_blank" rel="noopener">React TypeScript Cheatsheet — Typing Props &amp; Children</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0002-angular-templates-directives-vs-jsx.html">&larr; Previous: Lesson 0002</a> &bull; <a href="./0004-state-management-signals-vs-use-state.html">Next: Lesson 0004 &rarr;</a></p>
+  </footer>
+</body>
+</html>

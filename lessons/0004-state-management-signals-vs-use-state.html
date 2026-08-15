@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0004: State Management Fundamentals (Signals vs. useState & useMemo)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <h1>Lesson 0004: State Management Fundamentals</h1>
+    <div class="subtitle">Translating Angular Signals, computed(), effect(), and BehaviorSubjects to React useState, Derived State, useMemo, and useReducer</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Reactive State Translation Matrix</h2>
+      <p>Angular and React handle reactivity with fundamentally different mental models. Angular uses a <strong>push/pull reactive dependency graph</strong> (Signals) or stream subscriptions (RxJS), where updates target specific DOM bindings. React uses a <strong>functional re-execution model</strong>, where updating state re-invokes the component function from top to bottom and reconciles the resulting Virtual DOM tree.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Writable Local State</strong></td>
+            <td><code>count = signal(0);</code><br><code>this.count.set(5);</code></td>
+            <td><code>const [count, setCount] = useState(0);</code><br><code>setCount(5);</code></td>
+          </tr>
+          <tr>
+            <td><strong>Functional State Updates</strong></td>
+            <td><code>this.count.update(n =&gt; n + 1);</code></td>
+            <td><code>setCount(prev =&gt; prev + 1);</code><br><em>(Updater function ensures latest state)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Computed / Derived State</strong></td>
+            <td><code>double = computed(() =&gt; this.count() * 2);</code></td>
+            <td><code>const double = count * 2;</code> <em>(Inline)</em><br>or <code>useMemo(() =&gt; count * 2, [count])</code></td>
+          </tr>
+          <tr>
+            <td><strong>Complex Multi-Field Transitions</strong></td>
+            <td><code>BehaviorSubject&lt;State&gt;</code> / Service methods</td>
+            <td><code>const [state, dispatch] = useReducer(reducer, initial);</code></td>
+          </tr>
+          <tr>
+            <td><strong>Side Effects on State Change</strong></td>
+            <td><code>effect(() =&gt; { console.log(this.count()); });</code></td>
+            <td><code>useEffect(() =&gt; { console.log(count); }, [count]);</code></td>
+          </tr>
+          <tr>
+            <td><strong>Lazy State Initialization</strong></td>
+            <td>Class property constructor / factory</td>
+            <td><code>useState(() =&gt; computeExpensiveInitialValue())</code></td>
+          </tr>
+          <tr>
+            <td><strong>State Immutability Rule</strong></td>
+            <td>Signals allow object references (though immutability is recommended)</td>
+            <td><strong>Strictly Immutable</strong>: Must return new object/array references via spread (<code>{...obj}</code>, <code>.map()</code>, <code>.filter()</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Reactivity Deep Dive: Dependency Graphs vs. Function Re-executions</h2>
+      <p>Understanding the runtime difference between Angular Signals and React Hooks is essential to writing performant React code and avoiding common bugs:</p>
+
+      <div class="callout tip">
+        <strong>Angular Signals: Granular Dependency Graph</strong>
+        <p>In Angular, calling <code>count.set(5)</code> notifies only the consumers (template nodes, computed signals, or effects) that directly read <code>count()</code>. The component class instance is created once and stays in memory; the component method or template is not re-executed in its entirety.</p>
+      </div>
+
+      <div class="callout tip">
+        <strong>React Hooks: Component Function Re-Execution</strong>
+        <p>In React, calling <code>setCount(5)</code> schedules a re-render. React <strong>re-runs the entire component function from line 1 to the return statement</strong>. Local variables are re-evaluated, and JSX is regenerated. React preserves state values between these function executions by tracking hook call order inside its internal Fiber data structure.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Derived State: Plain Variables vs. `useMemo`</h2>
+      <p>One of the most common anti-patterns for Angular engineers coming to React is creating duplicate <code>useState</code> hooks for values that can simply be calculated during render.</p>
+
+      <div class="callout warning">
+        <strong>Anti-Pattern (Redundant State &amp; Out-of-Sync Bugs):</strong>
+        <pre><code>// ❌ BAD: Storing derived values in separate state
+const [firstName, setFirstName] = useState('Ada');
+const [lastName, setLastName] = useState('Lovelace');
+const [fullName, setFullName] = useState(''); // Redundant!
+
+// Forcing a sync effect leads to unnecessary re-renders and glitch states:
+useEffect(() => {
+  setFullName(`${firstName} ${lastName}`);
+}, [firstName, lastName]);</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>The React Way (Calculate During Render):</strong>
+        <pre><code>// ✅ GOOD: Plain JavaScript variable calculated on every render
+const [firstName, setFirstName] = useState('Ada');
+const [lastName, setLastName] = useState('Lovelace');
+
+// Computed instantly in microseconds during function execution:
+const fullName = `${firstName} ${lastName}`;</code></pre>
+      </div>
+
+      <p><strong>When should you use <code>useMemo</code>?</strong> Only when the calculation is computationally expensive (e.g. filtering/sorting an array of thousands of items) or when you need referential stability for dependency arrays:</p>
+
+      <pre><code>// ✅ Use useMemo ONLY for expensive filtering/sorting or reference caching:
+const visibleUsers = useMemo(() => {
+  return users.filter(u => u.role === selectedRole).sort((a, b) => a.score - b.score);
+}, [users, selectedRole]);</code></pre>
+    </section>
+
+    <section>
+      <h2>4. Side-by-Side Code Comparison: Interactive Inventory &amp; Order Widget</h2>
+      <p>Compare how an interactive product inventory manager with category filtering, search, quantity updates, and dynamic price totals is built in Angular (Signals) vs. React (useState &amp; derived calculations):</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (Signals &amp; Computed)</h3>
+          <pre><code>// inventory.component.ts
+import { Component, signal, computed } from '@angular/core';
+
+interface Item {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category: 'electronics' | 'books';
+}
+
+@Component({
+  selector: 'app-inventory',
+  templateUrl: './inventory.component.html'
+})
+export class InventoryComponent {
+  // Writable Signals
+  items = signal&lt;Item[]&gt;([
+    { id: '1', name: 'Mechanical Keyboard', price: 120, quantity: 1, category: 'electronics' },
+    { id: '2', name: 'TypeScript Handbook', price: 40, quantity: 2, category: 'books' }
+  ]);
+  selectedCategory = signal&lt;string&gt;('all');
+
+  // Computed Signals
+  filteredItems = computed(() => {
+    const cat = this.selectedCategory();
+    const list = this.items();
+    return cat === 'all' ? list : list.filter(i => i.category === cat);
+  });
+
+  totalPrice = computed(() => {
+    return this.filteredItems().reduce(
+      (sum, item) => sum + item.price * item.quantity, 0
+    );
+  });
+
+  updateQuantity(id: string, delta: number): void {
+    this.items.update(currentItems =>
+      currentItems.map(item =>
+        item.id === id
+          ? { ...item, quantity: Math.max(0, item.quantity + delta) }
+          : item
+      )
+    );
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (useState &amp; Derived State)</h3>
+          <pre><code>// Inventory.tsx
+import React, { useState, useMemo } from 'react';
+
+interface Item {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category: 'electronics' | 'books';
+}
+
+const INITIAL_ITEMS: Item[] = [
+  { id: '1', name: 'Mechanical Keyboard', price: 120, quantity: 1, category: 'electronics' },
+  { id: '2', name: 'TypeScript Handbook', price: 40, quantity: 2, category: 'books' }
+];
+
+export function Inventory() {
+  const [items, setItems] = useState&lt;Item[]&gt;(INITIAL_ITEMS);
+  const [selectedCategory, setSelectedCategory] = useState&lt;string&gt;('all');
+
+  // Derived calculation during render (no useEffect needed!)
+  const filteredItems = useMemo(() => {
+    return selectedCategory === 'all'
+      ? items
+      : items.filter(i => i.category === selectedCategory);
+  }, [items, selectedCategory]);
+
+  // Derived instant total
+  const totalPrice = filteredItems.reduce(
+    (sum, item) => sum + item.price * item.quantity, 0
+  );
+
+  // Updater function prevents race conditions
+  function handleUpdateQuantity(id: string, delta: number) {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id
+          ? { ...item, quantity: Math.max(0, item.quantity + delta) }
+          : item
+      )
+    );
+  }
+
+  return (
+    &lt;div className="inventory-card"&gt;
+      &lt;div className="controls"&gt;
+        &lt;label&gt;Category:&lt;/label&gt;
+        &lt;select
+          value={selectedCategory}
+          onChange={(e) =&gt; setSelectedCategory(e.target.value)}
+        &gt;
+          &lt;option value="all"&gt;All Categories&lt;/option&gt;
+          &lt;option value="electronics"&gt;Electronics&lt;/option&gt;
+          &lt;option value="books"&gt;Books&lt;/option&gt;
+        &lt;/select&gt;
+      &lt;/div&gt;
+
+      &lt;ul className="item-list"&gt;
+        {filteredItems.map(item =&gt; (
+          &lt;li key={item.id} className="item-row"&gt;
+            &lt;span&gt;{item.name} (${item.price})&lt;/span&gt;
+            &lt;div className="qty-controls"&gt;
+              &lt;button onClick={() =&gt; handleUpdateQuantity(item.id, -1)}&gt;-&lt;/button&gt;
+              &lt;span&gt;Qty: {item.quantity}&lt;/span&gt;
+              &lt;button onClick={() =&gt; handleUpdateQuantity(item.id, 1)}&gt;+&lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+
+      &lt;div className="summary"&gt;
+        &lt;strong&gt;Total Price: ${totalPrice.toFixed(2)}&lt;/strong&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Critical State Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Mutating Objects/Arrays Directly (The Reference Equality Trap)</strong>:
+            <br>
+            React uses <code>Object.is(oldState, newState)</code> to decide if a re-render is necessary. If you write:
+            <pre><code>// ❌ WILL NOT RE-RENDER:
+items.push(newItem);
+setItems(items); // Same array memory address!</code></pre>
+            Always create a new array or object copy:
+            <pre><code>// ✅ CORRECT:
+setItems([...items, newItem]);</code></pre>
+          </li>
+          <li>
+            <strong>Updater Functions vs. Direct Values in Event Handlers</strong>:
+            <br>
+            State updates inside React 18/19 are automatically batched. If you call:
+            <pre><code>setCount(count + 1);
+setCount(count + 1);</code></pre>
+            Both calls read the same closure snapshot of <code>count</code> (e.g. <code>0 + 1</code>). The result will be <code>1</code>, not <code>2</code>.
+            <br>
+            <em>Fix:</em> Use the updater function syntax: <code>setCount(prev =&gt; prev + 1)</code>.
+          </li>
+          <li>
+            <strong>Lazy State Initialization</strong>:
+            <br>
+            If your initial state requires reading <code>localStorage</code> or running a heavy parse, do not call it directly inside <code>useState(readStorage())</code> (which runs on <em>every single render</em>). Pass a function instead:
+            <pre><code>// ✅ Evaluated ONLY once on initial mount:
+const [token, setToken] = useState(() =&gt; localStorage.getItem('auth_token'));</code></pre>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Official Documentation References</h2>
+      <ul>
+        <li><a href="https://react.dev/reference/react/useState" target="_blank" rel="noopener">React Official Docs — useState Reference &amp; Best Practices</a></li>
+        <li><a href="https://react.dev/learn/updating-objects-in-state" target="_blank" rel="noopener">React Official Docs — Updating Objects in State</a></li>
+        <li><a href="https://react.dev/learn/updating-arrays-in-state" target="_blank" rel="noopener">React Official Docs — Updating Arrays in State</a></li>
+        <li><a href="https://react.dev/learn/choosing-the-state-structure" target="_blank" rel="noopener">React Official Docs — Choosing the State Structure &amp; Avoiding Redundant State</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0003-components-props-content-projection.html">&larr; Previous: Lesson 0003</a> &bull; <a href="./0005-forms-reactive-forms-vs-react-hook-form-zod.html">Next: Lesson 0005 &rarr;</a></p>
+  </footer>
+</body>
+</html>
