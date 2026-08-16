@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0013: Server-Side Rendering (SSR) & React Server Components (RSC)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0012-complex-global-state-ngrx-vs-zustand-rtk.html" class="nav-prev">&larr; Previous: Lesson 0012</a>
+        <a href="./0014-component-integration-testing-testbed-vs-vitest-rtl.html" class="nav-next">Next: Lesson 0014 &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0013: SSR &amp; React Server Components (RSC)</h1>
+    <div class="subtitle">Translating Angular Universal &amp; SSR Hydration to Next.js App Router, React Server Components, 'use client', Server Actions, and Streaming Suspense</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. SSR &amp; Server Components Translation Matrix</h2>
+      <p>Angular provides Server-Side Rendering (SSR) via Angular Universal and modern client hydration (<code>provideClientHydration()</code>), where the entire component tree is rendered on Node.js and re-executed during client hydration. In React, <a href="https://www.npmjs.com/package/next" target="_blank" rel="noopener"><strong>Next.js App Router</strong></a> and <strong>React Server Components (RSC)</strong> introduce a hybrid architecture where server components execute <em>only</em> on the server (sending zero JavaScript to the client) while interactive client islands use the <code>'use client'</code> directive.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SSR Prerendering</strong></td>
+            <td>Angular Universal / <code>provideClientHydration()</code></td>
+            <td>Next.js App Router (Automatic SSR on route requests)</td>
+          </tr>
+          <tr>
+            <td><strong>Server-Only Components</strong></td>
+            <td>N/A (All Angular components are sent to the client bundle)</td>
+            <td><strong>React Server Components (Default):</strong> Run exclusively on the server with <strong>0 KB client JavaScript bundle</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Client Interactivity Boundary</strong></td>
+            <td><code>isPlatformBrowser(platformId)</code> checks</td>
+            <td><code>'use client'</code> directive at the top of interactive component files</td>
+          </tr>
+          <tr>
+            <td><strong>Server Form Mutations</strong></td>
+            <td>Calling backend Express / Nest REST APIs</td>
+            <td><strong>Server Actions:</strong> <code>'use server'</code> async functions invoked directly from forms and buttons</td>
+          </tr>
+          <tr>
+            <td><strong>Direct Database &amp; Secret Access</strong></td>
+            <td>Forbidden (Client components cannot access DB/secrets)</td>
+            <td>Fully supported inside Server Components (query Postgres, Prisma, or read private ENV keys directly in JSX!)</td>
+          </tr>
+          <tr>
+            <td><strong>Progressive Streaming</strong></td>
+            <td>Angular <code>@defer</code> blocks</td>
+            <td>React <code>&lt;Suspense fallback={&lt;Skeleton /&gt;}&gt;</code> streaming HTML chunks over HTTP</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Primary Full-Stack React Frameworks</strong>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/next" target="_blank" rel="noopener"><strong><code>next</code></strong></a>: The standard production framework implementing React Server Components, file-system routing, and Server Actions.</li>
+          <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong><code>react</code></strong></a> (v19) &amp; <a href="https://www.npmjs.com/package/react-dom" target="_blank" rel="noopener"><strong><code>react-dom</code></strong></a>: Core libraries with native RSC and streaming support.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Server Components vs. Client Components</h2>
+      <p>In Next.js App Router, <strong>every component is a Server Component by default</strong>:</p>
+
+      <div class="callout tip">
+        <strong>1. Server Components (No 'use client' directive):</strong>
+        <ul>
+          <li>Can fetch data directly from databases (e.g. Prisma, SQL, filesystem).</li>
+          <li>Can keep secret API tokens and backend credentials secure from browser inspection.</li>
+          <li>Send <strong>zero JavaScript</strong> to the client browser (reducing bundle size).</li>
+          <li><em>Cannot</em> use hooks (<code>useState</code>, <code>useEffect</code>) or DOM event listeners (<code>onClick</code>).</li>
+        </ul>
+      </div>
+
+      <div class="callout tip">
+        <strong>2. Client Components ('use client' at top of file):</strong>
+        <ul>
+          <li>Can use state, effects, custom hooks, and event handlers (<code>onClick</code>, <code>onChange</code>).</li>
+          <li>Prerendered on the server as HTML, then hydrated in the browser with JavaScript.</li>
+          <li>Used as small "leaves" on the component tree for interactive elements.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Product Details Page with Secure DB Fetch &amp; Interactive Cart Widget</h2>
+      <p>Compare how a secure product page with database queries and an interactive "Add to Cart" button is built in Angular Universal vs. Next.js App Router (RSC):</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Universal (Client Component + Backend API)</h3>
+          <pre><code>// product.component.ts
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
+
+@Component({
+  selector: 'app-product',
+  template: `
+    &lt;div *ngIf="product"&gt;
+      &lt;h1&gt;{{ product.title }}&lt;/h1&gt;
+      &lt;p&gt;{{ product.price | currency }}&lt;/p&gt;
+      &lt;button (click)="addToCart()"&gt;Add to Cart&lt;/button&gt;
+    &lt;/div&gt;
+  `
+})
+export class ProductComponent implements OnInit {
+  product: any;
+  constructor(private http: HttpClient, private route: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    // Requires a separate backend REST API endpoint
+    const id = this.route.snapshot.paramMap.get('id');
+    this.http.get(`/api/products/${id}`).subscribe(data =&gt; this.product = data);
+  }
+
+  addToCart(): void {
+    console.log('Added to cart');
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>Next.js App Router (RSC + Client Island)</h3>
+          <pre><code>// app/products/[id]/page.tsx (Server Component)
+import { db } from '@/lib/db'; // Direct database access!
+import { AddToCartButton } from './AddToCartButton';
+import { Suspense } from 'react';
+
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  // Direct DB query on server — no client bundle, no separate API route!
+  const product = await db.product.findUnique({ where: { id: params.id } });
+
+  if (!product) return &lt;div&gt;Product not found&lt;/div&gt;;
+
+  return (
+    &lt;div className="product-card"&gt;
+      &lt;h1&gt;{product.title}&lt;/h1&gt;
+      &lt;p&gt;${product.price.toFixed(2)}&lt;/p&gt;
+      {/* Interactive client island */}
+      &lt;AddToCartButton productId={product.id} /&gt;
+    &lt;/div&gt;
+  );
+}
+
+// app/products/[id]/AddToCartButton.tsx ('use client')
+'use client';
+import React, { useState } from 'react';
+
+export function AddToCartButton({ productId }: { productId: string }) {
+  const [added, setAdded] = useState(false);
+
+  return (
+    &lt;button onClick={() =&gt; setAdded(true)}&gt;
+      {added ? 'Added to Cart ✓' : 'Add to Cart'}
+    &lt;/button&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Critical SSR &amp; RSC Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong><code>'use client'</code> Does NOT Mean "Execute Only in Browser"</strong>:
+            <br>
+            A common misconception is that <code>'use client'</code> components only run in the browser. In reality, Client Components are still prerendered to HTML on the server during initial page load! Therefore, never access <code>window</code> or <code>localStorage</code> directly in the component body without guarding it inside a <code>useEffect</code>.
+          </li>
+          <li>
+            <strong>Push <code>'use client'</code> to the Leaves of Your Tree</strong>:
+            <br>
+            If you place <code>'use client'</code> at the top of a page or layout, that entire subtree becomes a Client Component, sacrificing the bundle size benefits of Server Components. Keep layouts and pages as Server Components and extract only interactive buttons/inputs into small client files.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/next" target="_blank" rel="noopener"><strong>next (npm)</strong></a> &bull; <a href="https://nextjs.org/docs/app/building-your-application/rendering/server-components" target="_blank" rel="noopener">Next.js App Router — React Server Components Docs</a></li>
+        <li><a href="https://react.dev/reference/rsc/server-components" target="_blank" rel="noopener">React Official Docs — Server Components Reference</a></li>
+        <li><a href="https://react.dev/reference/rsc/use-client" target="_blank" rel="noopener">React Official Docs — 'use client' Directive Reference</a></li>
+        <li><a href="https://react.dev/reference/rsc/use-server" target="_blank" rel="noopener">React Official Docs — 'use server' Server Actions Reference</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0012-complex-global-state-ngrx-vs-zustand-rtk.html">&larr; Previous: Lesson 0012</a> &bull; <a href="./0014-component-integration-testing-testbed-vs-vitest-rtl.html">Next: Lesson 0014 &rarr;</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0006: Angular Services & DI vs. React Context & Custom Hooks</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0005-forms-reactive-forms-vs-react-hook-form-zod.html" class="nav-prev">&larr; Previous: Lesson 0005</a>
+        <a href="./0007-lifecycle-hooks-vs-use-effect-refs.html" class="nav-next">Next: Lesson 0007 &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0006: Angular Services & DI vs. React Context & Custom Hooks</h1>
+    <div class="subtitle">Translating @Injectable singletons, hierarchical injectors, and inject() tokens to createContext, React 19 Context Providers, and composable custom hooks</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Dependency Injection &amp; Services Translation Matrix</h2>
+      <p>Angular features a robust, hierarchical <strong>Dependency Injection (DI)</strong> container built directly into the framework. React does not have a global DI container or class-based service injector; instead, React separates logic sharing into <strong>Composable Custom Hooks</strong> (for reusable stateful logic) and <strong>React Context</strong> (for passing data down a component subtree without prop drilling).</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Global Singleton Service</strong></td>
+            <td><code>@Injectable({ providedIn: 'root' })</code></td>
+            <td>Root Context Provider: <code>&lt;AuthContext value={auth}&gt;</code><br>or External Module Store (<a href="https://www.npmjs.com/package/zustand" target="_blank" rel="noopener"><code>zustand</code></a>)</td>
+          </tr>
+          <tr>
+            <td><strong>Subtree / Scoped Services</strong></td>
+            <td><code>providers: [WidgetService]</code> on <code>@Component</code></td>
+            <td>Nested Context Provider:<br><code>&lt;WidgetContext value={scopedInstance}&gt;</code></td>
+          </tr>
+          <tr>
+            <td><strong>Consuming Injected Services</strong></td>
+            <td><code>constructor(private auth: AuthService)</code><br>or <code>auth = inject(AuthService);</code></td>
+            <td>Custom Hook Consumer:<br><code>const { user, login } = useAuth();</code></td>
+          </tr>
+          <tr>
+            <td><strong>Stateless / Stateful Reusable Logic</strong></td>
+            <td>Utility Service classes with RxJS / Signals</td>
+            <td><strong>Composable Custom Hooks:</strong><br><code>useDebounce()</code>, <code>useLocalStorage()</code>, <code>useToggle()</code></td>
+          </tr>
+          <tr>
+            <td><strong>Injection Tokens &amp; Config</strong></td>
+            <td><code>new InjectionToken&lt;AppConfig&gt;('API_CONFIG')</code></td>
+            <td>Typed Context:<br><code>const ConfigContext = createContext&lt;AppConfig | null&gt;(null);</code></td>
+          </tr>
+          <tr>
+            <td><strong>Reading Context (React 19)</strong></td>
+            <td><code>inject(Token, { optional: true })</code></td>
+            <td><code>const theme = useContext(ThemeContext);</code><br>or <code>const theme = use(ThemeContext);</code> <em>(React 19)</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Service Classes vs. Composable Custom Hooks</h2>
+      <p>Angular developers are accustomed to placing shared logic into <code>@Injectable()</code> classes. In React, you must understand the distinction between <strong>sharing stateful logic</strong> vs. <strong>sharing state instances</strong>:</p>
+
+      <div class="callout tip">
+        <strong>1. Custom Hooks Share Logic, NOT State Instances:</strong>
+        <p>A Custom Hook is simply a JavaScript function whose name starts with <code>use</code> that can call other React hooks. <strong>Every component that calls a custom hook gets its own isolated state.</strong></p>
+        <pre><code>// useCounter.ts — Reusable counter logic
+export function useCounter(initialValue = 0) {
+  const [count, setCount] = useState(initialValue);
+  const increment = () => setCount(c => c + 1);
+  const decrement = () => setCount(c => c - 1);
+  return { count, increment, decrement };
+}
+
+// ComponentA and ComponentB will EACH have their own independent count:
+function ComponentA() { const { count, increment } = useCounter(); ... }
+function ComponentB() { const { count, increment } = useCounter(); ... }</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>2. React Context Shares a Single State Instance Down a Tree:</strong>
+        <p>When you want multiple components in a tree to read and update the <strong>exact same state instance</strong> (e.g. Current User, Color Theme, Active Workspace), you combine React Context with a Custom Hook:</p>
+        <pre><code>// The Gold Standard Pattern: Context + Provider Component + Custom Hook Guard
+const AuthContext = createContext&lt;AuthContextValue | null&gt;(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState&lt;User | null&gt;(null);
+  const value = useMemo(() => ({ user, setUser }), [user]);
+
+  // In React 19: <AuthContext value={value}>
+  return &lt;AuthContext.Provider value={value}&gt;{children}&lt;/AuthContext.Provider&gt;;
+}
+
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an &lt;AuthProvider&gt;');
+  }
+  return context;
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Modern React 19 Context Enhancements</h2>
+      <p>React 19 streamlines Context usage with two key improvements:</p>
+
+      <div class="callout tip">
+        <strong>1. Direct Context Provider Element:</strong>
+        <p>You no longer need <code>&lt;ThemeContext.Provider value={...}&gt;</code>. You can now render <code>&lt;ThemeContext value={...}&gt;</code> directly:</p>
+        <pre><code>// React 19 Syntax:
+return (
+  &lt;ThemeContext value="dark"&gt;
+    &lt;App /&gt;
+  &lt;/ThemeContext&gt;
+);</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>2. The <code>use()</code> Hook for Conditional Context:</strong>
+        <p>Unlike <code>useContext()</code>, which cannot be called inside loops or conditional blocks, React 19 introduces the <code>use()</code> API which can be called conditionally:</p>
+        <pre><code>import { use } from 'react';
+
+function UserProfile({ isPremium }: { isPremium: boolean }) {
+  // ✅ Valid in React 19: conditionally reading context
+  if (isPremium) {
+    const premiumConfig = use(PremiumConfigContext);
+    return &lt;PremiumBadge config={premiumConfig} /&gt;;
+  }
+  return &lt;StandardBadge /&gt;;
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Side-by-Side Code Comparison: Enterprise Authentication &amp; Session Management</h2>
+      <p>Compare how a production session authentication service is structured in Angular (Injectable class with RxJS BehaviorSubject) vs. React (Context + Provider + Custom Hook):</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Authentication Service (DI Class)</h3>
+          <pre><code>// auth.service.ts
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, map } from 'rxjs';
+
+export interface User {
+  id: string;
+  name: string;
+  role: 'admin' | 'user';
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private userSubject = new BehaviorSubject&lt;User | null&gt;(null);
+  user$ = this.userSubject.asObservable();
+  isAuthenticated$ = this.user$.pipe(map(user =&gt; !!user));
+
+  login(user: User): void {
+    this.userSubject.next(user);
+  }
+
+  logout(): void {
+    this.userSubject.next(null);
+  }
+
+  get currentUser(): User | null {
+    return this.userSubject.getValue();
+  }
+}
+
+// Consumer Component:
+@Component({ ... })
+export class NavComponent {
+  constructor(public auth: AuthService) {}
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Context &amp; Custom Hook (TSX)</h3>
+          <pre><code>// AuthContext.tsx
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+
+export interface User {
+  id: string;
+  name: string;
+  role: 'admin' | 'user';
+}
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (user: User) =&gt; void;
+  logout: () => void;
+}
+
+const AuthContext = createContext&lt;AuthContextType | null&gt;(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState&lt;User | null&gt;(null);
+
+  const login = useCallback((userData: User) =&gt; setUser(userData), []);
+  const logout = useCallback(() =&gt; setUser(null), []);
+
+  const value = useMemo(() =&gt; ({
+    user,
+    isAuthenticated: Boolean(user),
+    login,
+    logout
+  }), [user, login, logout]);
+
+  return &lt;AuthContext value={value}&gt;{children}&lt;/AuthContext&gt;;
+}
+
+// Consumer Hook:
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside &lt;AuthProvider&gt;');
+  return ctx;
+}
+
+// Consumer Component:
+export function Nav() {
+  const { user, isAuthenticated, logout } = useAuth();
+  return &lt;nav&gt;...&lt;/nav&gt;;
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Critical DI &amp; Context Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Context is NOT a High-Frequency State Manager</strong>:
+            <br>
+            In Angular, services using Signals or RxJS allow components to subscribe to specific values without re-rendering everything. In React, whenever any value in a Context updates, <strong>every single component consuming that Context re-renders</strong>. Use Context for low-frequency updates (Auth, Theme, Locale). For high-frequency state (e.g. cart updates, interactive forms, 60fps animations), use <a href="https://www.npmjs.com/package/zustand" target="_blank" rel="noopener"><strong><code>zustand</code></strong></a>.
+          </li>
+          <li>
+            <strong>Always Memoize the Context Value Object</strong>:
+            <br>
+            If you write <code>&lt;AuthContext value={{ user, login }}&gt;</code> without <code>useMemo</code>, a new object literal is created on every render of the Provider. This forces all consumer components to re-render even if <code>user</code> has not changed!
+          </li>
+          <li>
+            <strong>Custom Hooks Don't Create Singletons</strong>:
+            <br>
+            In Angular, injecting a service into two components gives both components the same class instance. In React, calling a custom hook creates a completely separate state instance in each component unless wrapped by a Context Provider.
+          </li>
+          <li>
+            <strong>Always Add a Fail-Fast Guard in Custom Hooks</strong>:
+            <br>
+            Always check <code>if (!context) throw new Error('...')</code> in your custom hook. This catches missing Provider errors immediately during development with a crystal-clear error message.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev/learn/passing-data-deeply-with-context" target="_blank" rel="noopener">Passing Data Deeply with Context</a></li>
+        <li><a href="https://react.dev/learn/reusing-logic-with-custom-hooks" target="_blank" rel="noopener">React Official Docs — Reusing Logic with Custom Hooks</a></li>
+        <li><a href="https://react.dev/reference/react/useContext" target="_blank" rel="noopener">React Official Docs — useContext Hook Reference</a></li>
+        <li><a href="https://react.dev/reference/react/use" target="_blank" rel="noopener">React 19 Docs — use() API Reference</a></li>
+        <li><a href="https://www.npmjs.com/package/zustand" target="_blank" rel="noopener"><strong>zustand (npm)</strong></a> &bull; <a href="https://zustand.docs.pmnd.rs" target="_blank" rel="noopener">Zustand Official Documentation (High-Performance Global State)</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0005-forms-reactive-forms-vs-react-hook-form-zod.html">&larr; Previous: Lesson 0005</a> &bull; <a href="./0007-lifecycle-hooks-vs-use-effect-refs.html">Next: Lesson 0007 &rarr;</a></p>
+  </footer>
+</body>
+</html>

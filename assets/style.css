@@ -33,6 +33,32 @@ header {
   margin-bottom: 32px;
 }
 
+/* --- Header Top Navigation --- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.lesson-nav a {
+  color: var(--accent-blue);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.lesson-nav a:hover {
+  text-decoration: underline;
+}
+
+.lesson-nav .nav-arrows {
+  display: flex;
+  gap: 16px;
+}
+
 h1 {
   font-family: var(--font-serif);
   font-weight: normal;

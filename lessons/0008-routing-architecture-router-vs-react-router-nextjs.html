@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0008: Routing Architecture (RouterModule vs. React Router & Next.js)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0007-lifecycle-hooks-vs-use-effect-refs.html" class="nav-prev">&larr; Previous: Lesson 0007</a>
+        <a href="./0009-http-data-pipelines-rxjs-vs-tanstack-query.html" class="nav-next">Next: Lesson 0009 &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0008: Routing Architecture</h1>
+    <div class="subtitle">Translating Angular RouterModule, &lt;router-outlet&gt;, CanActivate guards, Resolvers, and ActivatedRoute to React Router v7 &amp; Next.js App Router</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Routing Concept Translation Matrix</h2>
+      <p>Angular provides an opinionated, centralized routing module (<code>@angular/router</code>) with class-based guards, resolvers, and stream-based route params. In the React ecosystem, client-side single-page applications use <a href="https://www.npmjs.com/package/react-router" target="_blank" rel="noopener"><strong><code>react-router</code></strong></a> (v7), while full-stack / SSR applications use <a href="https://www.npmjs.com/package/next" target="_blank" rel="noopener"><strong><code>next</code></strong></a> (Next.js App Router) file-system conventions.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Route Configuration</strong></td>
+            <td><code>provideRouter(routes)</code><br>or <code>RouterModule.forRoot(routes)</code></td>
+            <td><strong>React Router:</strong> <code>createBrowserRouter(routes)</code><br><strong>Next.js:</strong> File-system <code>app/</code> folder conventions</td>
+          </tr>
+          <tr>
+            <td><strong>View Outlet (Nested Routing)</strong></td>
+            <td><code>&lt;router-outlet&gt;&lt;/router-outlet&gt;</code></td>
+            <td><strong>React Router:</strong> <code>&lt;Outlet /&gt;</code><br><strong>Next.js:</strong> <code>{children}</code> in <code>layout.tsx</code></td>
+          </tr>
+          <tr>
+            <td><strong>Declarative Links</strong></td>
+            <td><code>[routerLink]="['/users', user.id]"</code><br><code>routerLinkActive="active"</code></td>
+            <td><strong>React Router:</strong> <code>&lt;Link to={`/users/${id}`}&gt;</code><br>or <code>&lt;NavLink className={({ isActive }) =&gt; ...}&gt;</code><br><strong>Next.js:</strong> <code>&lt;Link href={`/users/${id}`}&gt;</code></td>
+          </tr>
+          <tr>
+            <td><strong>Imperative Navigation</strong></td>
+            <td><code>this.router.navigate(['/dashboard'])</code></td>
+            <td><strong>React Router:</strong> <code>const navigate = useNavigate(); navigate('/dashboard');</code><br><strong>Next.js:</strong> <code>const router = useRouter(); router.push('/dashboard');</code></td>
+          </tr>
+          <tr>
+            <td><strong>Route Path Parameters</strong></td>
+            <td><code>route.params.subscribe()</code><br>or <code>route.snapshot.paramMap.get('id')</code></td>
+            <td><code>const { id } = useParams();</code></td>
+          </tr>
+          <tr>
+            <td><strong>Query / Search Parameters</strong></td>
+            <td><code>route.queryParams.subscribe()</code></td>
+            <td><code>const [searchParams, setSearchParams] = useSearchParams();</code><br><code>const query = searchParams.get('q');</code></td>
+          </tr>
+          <tr>
+            <td><strong>Route Guards (Authentication)</strong></td>
+            <td><code>canActivate: [AuthGuard]</code><br>or <code>canActivateFn</code></td>
+            <td><strong>Layout Guard:</strong> <code>&lt;ProtectedRoute&gt;&lt;Outlet /&gt;&lt;/ProtectedRoute&gt;</code><br>or Data Route <code>loader: () =&gt; redirect('/login')</code><br><strong>Next.js:</strong> <code>middleware.ts</code></td>
+          </tr>
+          <tr>
+            <td><strong>Pre-fetching / Resolvers</strong></td>
+            <td><code>resolve: { user: UserResolver }</code></td>
+            <td><strong>React Router:</strong> <code>loader: async () =&gt; fetchUser()</code> + <code>useLoaderData()</code><br><strong>Next.js:</strong> Async Server Components: <code>async function Page()</code></td>
+          </tr>
+          <tr>
+            <td><strong>Lazy Loading</strong></td>
+            <td><code>loadChildren: () =&gt; import(...)</code><br>or <code>loadComponent</code></td>
+            <td><strong>React Router:</strong> <code>lazy: () =&gt; import('./Dashboard')</code><br><strong>Next.js:</strong> Automatic route chunking per folder</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Primary Routing Packages in the React Ecosystem</strong>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/react-router" target="_blank" rel="noopener"><strong><code>react-router</code></strong></a> (v7): The industry standard client &amp; data router for React single-page applications.</li>
+          <li><a href="https://www.npmjs.com/package/next" target="_blank" rel="noopener"><strong><code>next</code></strong></a>: Full-stack React framework featuring file-system directory routing with React Server Components.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Layout Routes &amp; State Persistence</h2>
+      <p>In Angular, nested views are rendered using <code>&lt;router-outlet&gt;</code>. React Router uses the exact same pattern with <code>&lt;Outlet /&gt;</code>:</p>
+
+      <div class="callout tip">
+        <strong>How Layout Routes Prevent Redundant Re-Renders:</strong>
+        <p>When a user navigates between <code>/admin/users</code> and <code>/admin/analytics</code>, only the child route component switches inside <code>&lt;Outlet /&gt;</code>. The parent <code>&lt;AdminLayout&gt;</code> (with its sidebar, topbar, and search inputs) stays mounted—preserving scroll position and UI state without flashing!</p>
+        <pre><code>// AppRoutes.tsx
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router';
+
+function AdminLayout() {
+  return (
+    &lt;div className="admin-shell"&gt;
+      &lt;Sidebar /&gt;
+      &lt;main className="admin-content"&gt;
+        &lt;Outlet /&gt; {/* Child route renders here (like <router-outlet>) */}
+      &lt;/main&gt;
+    &lt;/div&gt;
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    path: '/admin',
+    element: &lt;AdminLayout /&gt;,
+    children: [
+      { path: 'users', element: &lt;UserManagement /&gt; },
+      { path: 'analytics', element: &lt;AnalyticsDashboard /&gt; }
+    ]
+  }
+]);</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Implementing Route Guards &amp; Protected Layouts</h2>
+      <p>Angular developers often wonder where <code>CanActivate</code> guards go in React. In React Router, you protect routes by wrapping them in a <strong>Protected Layout Component</strong>:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular CanActivate Guard</h3>
+          <pre><code>// auth.guard.ts
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private auth: AuthService, private router: Router) {}
+
+  canActivate(): boolean | UrlTree {
+    if (this.auth.isLoggedIn) {
+      return true;
+    }
+    return this.router.createUrlTree(['/login']);
+  }
+}
+
+// app-routing.module.ts
+const routes: Routes = [
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [AuthGuard]
+  }
+];</code></pre>
+        </div>
+
+        <div>
+          <h3>React Protected Route Wrapper</h3>
+          <pre><code>// ProtectedRoute.tsx
+import React from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router';
+import { useAuth } from './AuthContext';
+
+export function ProtectedRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return &lt;div className="loader"&gt;Checking authentication...&lt;/div&gt;;
+  }
+
+  if (!isAuthenticated) {
+    // Redirect to login while preserving previous attempted URL
+    return &lt;Navigate to="/login" state={{ from: location }} replace /&gt;;
+  }
+
+  return &lt;Outlet /&gt;; // Renders protected child routes
+}
+
+// Router Setup:
+const router = createBrowserRouter([
+  {
+    element: &lt;ProtectedRoute /&gt;, // Auth Guard
+    children: [
+      { path: '/dashboard', element: &lt;Dashboard /&gt; },
+      { path: '/settings', element: &lt;Settings /&gt; }
+    ]
+  },
+  { path: '/login', element: &lt;Login /&gt; }
+]);</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Side-by-Side Code Comparison: Dynamic Route with Parameter Inspection</h2>
+      <p>Compare how dynamic URL parameters (e.g. <code>/users/:userId</code>) and programmatic navigation are accessed in Angular vs React:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (ActivatedRoute)</h3>
+          <pre><code>// user-detail.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-user-detail',
+  templateUrl: './user-detail.component.html'
+})
+export class UserDetailComponent implements OnInit, OnDestroy {
+  userId!: string;
+  private sub!: Subscription;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    // Subscribe to param changes
+    this.sub = this.route.params.subscribe(params => {
+      this.userId = params['userId'];
+      this.loadUser(this.userId);
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/users']);
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (useParams &amp; useNavigate)</h3>
+          <pre><code>// UserDetail.tsx
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router';
+
+export function UserDetail() {
+  // 1. Read dynamic param directly (no subscription needed!)
+  const { userId } = useParams&lt;{ userId: string }&gt;();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userId) {
+      loadUser(userId);
+    }
+  }, [userId]); // Automatically re-runs when URL param changes
+
+  function handleGoBack() {
+    navigate('/users');
+  }
+
+  return (
+    &lt;div className="user-detail-card"&gt;
+      &lt;h2&gt;User Profile: {userId}&lt;/h2&gt;
+      &lt;button onClick={handleGoBack}&gt;&larr; Back to Users&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Critical Routing Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Never Use Plain <code>&lt;a href="..."&gt;</code> for Internal Navigation</strong>:
+            <br>
+            Using <code>&lt;a href="/dashboard"&gt;</code> performs a hard browser reload, dumping all React state and re-fetching the entire bundle. Always use <code>&lt;Link to="/dashboard"&gt;</code> or <code>&lt;NavLink&gt;</code> for client-side transitions.
+          </li>
+          <li>
+            <strong><code>useParams()</code> Returns Strings</strong>:
+            <br>
+            All path parameters extracted with <code>useParams()</code> are strings. If your route is <code>/products/:id</code> and you expect a number, explicitly convert it: <code>const id = Number(params.id)</code>.
+          </li>
+          <li>
+            <strong>Active Link Styling: <code>routerLinkActive</code> vs <code>NavLink</code></strong>:
+            <br>
+            In Angular, you attach <code>routerLinkActive="active"</code>. In React Router, use the <code>&lt;NavLink&gt;</code> component with a callback function:
+            <pre><code>&lt;NavLink
+  to="/dashboard"
+  className={({ isActive }) =&gt; (isActive ? 'nav-link active' : 'nav-link')}
+&gt;
+  Dashboard
+&lt;/NavLink&gt;</code></pre>
+          </li>
+          <li>
+            <strong>Programmatic Redirects in Render</strong>:
+            <br>
+            Never call <code>navigate('/login')</code> directly inside the body of your component function during render. Instead, return <code>&lt;Navigate to="/login" replace /&gt;</code> as a JSX element or invoke <code>navigate()</code> inside an event handler / <code>useEffect</code>.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react-router" target="_blank" rel="noopener"><strong>react-router (npm)</strong></a> &bull; <a href="https://reactrouter.com" target="_blank" rel="noopener">React Router Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/next" target="_blank" rel="noopener"><strong>next (npm)</strong></a> &bull; <a href="https://nextjs.org/docs/app/building-your-application/routing" target="_blank" rel="noopener">Next.js App Router Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev" target="_blank" rel="noopener">React Official Documentation</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0007-lifecycle-hooks-vs-use-effect-refs.html">&larr; Previous: Lesson 0007</a> &bull; <a href="./0009-http-data-pipelines-rxjs-vs-tanstack-query.html">Next: Lesson 0009 &rarr;</a></p>
+  </footer>
+</body>
+</html>

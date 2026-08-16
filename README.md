@@ -15,15 +15,15 @@ Rather than starting from zero with basic HTML/JS programming concepts, this cou
 | **0003** | [**Components, Props & Content Projection**](./lessons/0003-components-props-content-projection.html) | `@Input()`, `@Output() EventEmitter`, `<ng-content>` vs `props`, callbacks, and `children` slot patterns. | ✅ Active |
 | **0004** | [**State Management Fundamentals (Signals vs. useState)**](./lessons/0004-state-management-signals-vs-use-state.html) | Angular Signals (`signal`, `computed`, `effect`) vs React `useState`, `useMemo`, `useEffect`. | ✅ Active |
 | **0005** | [**Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)**](./lessons/0005-forms-reactive-forms-vs-react-hook-form-zod.html) | `FormGroup`, `FormControl`, custom validators vs React Hook Form, controlled inputs, and Zod schemas. | ✅ Active |
-| **0006** | **Angular Services & DI vs. React Context & Custom Hooks** | `@Injectable({ providedIn: 'root' })` vs `createContext`, `<Provider>`, and composable custom hooks. | ⏳ Pending |
-| **0007** | **Lifecycle Hooks vs. useEffect & Refs** | `ngOnInit`, `ngOnDestroy`, `ngOnChanges`, `@ViewChild` vs `useEffect` dependency arrays, cleanup, and `useRef`. | ⏳ Pending |
-| **0008** | **Routing Architecture (RouterModule vs. React Router & Next.js)** | Lazy loading, Route Guards (`CanActivate`), dynamic params, and layout route hierarchies. | ⏳ Pending |
-| **0009** | **HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)** | `HttpClient` Observables & `| async` pipe vs `fetch` + TanStack Query (`useQuery`, `useMutation`, caching). | ⏳ Pending |
-| **0010** | **CSS & Component Styling Architecture** | ViewEncapsulation (Emulated/ShadowDOM) & SCSS vs CSS Modules, Tailwind CSS, and CSS-in-JS. | ⏳ Pending |
-| **0011** | **Performance Optimization & Reconciliation** | Zone.js vs Virtual DOM Reconciliation, `OnPush` strategy vs `React.memo`, `useMemo`, `useCallback`. | ⏳ Pending |
-| **0012** | **Complex Global State (NgRx vs. Zustand & Redux Toolkit)** | Actions, Reducers, Effects, Selectors vs Zustand lightweight atomic stores and RTK slices. | ⏳ Pending |
-| **0013** | **Server-Side Rendering (SSR) & React Server Components (RSC)** | Angular Universal / SSR Hydration vs Next.js App Router, RSC, `'use client'`, and streaming. | ⏳ Pending |
-| **0014** | **Component & Integration Testing (TestBed vs. Vitest & RTL)** | `TestBed`, `By.css` vs Vitest + React Testing Library (`render`, `screen`, `userEvent`, accessibility queries). | ⏳ Pending |
+| **0006** | [**Angular Services & DI vs. React Context & Custom Hooks**](./lessons/0006-angular-services-di-vs-context-custom-hooks.html) | `@Injectable({ providedIn: 'root' })` vs `createContext`, `<Provider>`, and composable custom hooks. | ✅ Active |
+| **0007** | [**Lifecycle Hooks vs. useEffect & Refs**](./lessons/0007-lifecycle-hooks-vs-use-effect-refs.html) | `ngOnInit`, `ngOnDestroy`, `ngOnChanges`, `@ViewChild` vs `useEffect` dependency arrays, cleanup, and `useRef`. | ✅ Active |
+| **0008** | [**Routing Architecture (RouterModule vs. React Router & Next.js)**](./lessons/0008-routing-architecture-router-vs-react-router-nextjs.html) | Lazy loading, Route Guards (`CanActivate`), dynamic params, and layout route hierarchies. | ✅ Active |
+| **0009** | [**HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)**](./lessons/0009-http-data-pipelines-rxjs-vs-tanstack-query.html) | `HttpClient` Observables & `| async` pipe vs `fetch` + TanStack Query (`useQuery`, `useMutation`, caching). | ✅ Active |
+| **0010** | [**CSS & Component Styling Architecture**](./lessons/0010-css-component-styling-architecture.html) | ViewEncapsulation (Emulated/ShadowDOM) & SCSS vs CSS Modules, Tailwind CSS, and CSS-in-JS. | ✅ Active |
+| **0011** | [**Performance Optimization & Reconciliation**](./lessons/0011-performance-optimization-reconciliation.html) | Zone.js vs Virtual DOM Reconciliation, `OnPush` strategy vs `React.memo`, `useMemo`, `useCallback`. | ✅ Active |
+| **0012** | [**Complex Global State (NgRx vs. Zustand & Redux Toolkit)**](./lessons/0012-complex-global-state-ngrx-vs-zustand-rtk.html) | Actions, Reducers, Effects, Selectors vs Zustand lightweight atomic stores and RTK slices. | ✅ Active |
+| **0013** | [**Server-Side Rendering (SSR) & React Server Components (RSC)**](./lessons/0013-server-side-rendering-ssr-react-server-components-rsc.html) | Angular Universal / SSR Hydration vs Next.js App Router, RSC, `'use client'`, and streaming. | ✅ Active |
+| **0014** | [**Component & Integration Testing (TestBed vs. Vitest & RTL)**](./lessons/0014-component-integration-testing-testbed-vs-vitest-rtl.html) | `TestBed`, `By.css` vs Vitest + React Testing Library (`render`, `screen`, `userEvent`, accessibility queries). | ✅ Active |
 
 ---
 

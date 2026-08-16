@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0009: HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0008-routing-architecture-router-vs-react-router-nextjs.html" class="nav-prev">&larr; Previous: Lesson 0008</a>
+        <a href="./0010-css-component-styling-architecture.html" class="nav-next">Next: Lesson 0010 &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0009: HTTP Data Pipelines &amp; Server State</h1>
+    <div class="subtitle">Translating Angular HttpClient, RxJS Observables, async pipes, and switchMap pipelines to TanStack React Query v5</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. HTTP &amp; Server State Translation Matrix</h2>
+      <p>In Angular, HTTP requests are managed through <code>HttpClient</code> returning RxJS <code>Observable</code> streams, consumed via template <code>async</code> pipes or manual subscriptions. In modern React, the industry standard is <a href="https://www.npmjs.com/package/@tanstack/react-query" target="_blank" rel="noopener"><strong><code>@tanstack/react-query</code></strong></a> (v5): an asynchronous server-state library that handles caching, background synchronization, automatic deduplication, and declarative mutations.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>HTTP GET Request</strong></td>
+            <td><code>this.http.get&lt;User[]&gt;('/api/users')</code><br><em>(Returns <code>Observable&lt;User[]&gt;</code>)</em></td>
+            <td><code>const { data: users, isPending, error } = useQuery({ queryKey: ['users'], queryFn: fetchUsers });</code></td>
+          </tr>
+          <tr>
+            <td><strong>Template Consumption</strong></td>
+            <td><code>*ngIf="users$ | async as users"</code></td>
+            <td>Direct JSX access:<br><code>{isPending ? &lt;Spinner /&gt; : users.map(...)}</code></td>
+          </tr>
+          <tr>
+            <td><strong>Mutations (POST / PUT / DELETE)</strong></td>
+            <td><code>this.http.post('/api/users', payload).subscribe(...)</code></td>
+            <td><code>const mutation = useMutation({ mutationFn: createUser, onSuccess: () =&gt; queryClient.invalidateQueries({ queryKey: ['users'] }) });</code></td>
+          </tr>
+          <tr>
+            <td><strong>Cache Invalidation &amp; Refetch</strong></td>
+            <td>Manual Subject emission / polling service</td>
+            <td><code>queryClient.invalidateQueries({ queryKey: ['users'] });</code></td>
+          </tr>
+          <tr>
+            <td><strong>Request Caching &amp; Deduplication</strong></td>
+            <td><code>shareReplay(1)</code> / custom HTTP Interceptor</td>
+            <td>Built-in automatic query deduplication, memory caching, and stale-while-revalidate</td>
+          </tr>
+          <tr>
+            <td><strong>Dependent / Chained Queries</strong></td>
+            <td><code>this.userId$.pipe(switchMap(id =&gt; this.http.get(...)))</code></td>
+            <td><code>useQuery({ queryKey: ['user', id], queryFn: () =&gt; fetchUser(id), enabled: !!id })</code></td>
+          </tr>
+          <tr>
+            <td><strong>Auto-Refetch on Window Focus / Reconnect</strong></td>
+            <td>Custom browser window event listeners</td>
+            <td>Built-in automatic defaults:<br><code>refetchOnWindowFocus: true</code>, <code>refetchOnReconnect: true</code></td>
+          </tr>
+          <tr>
+            <td><strong>Optimistic UI Updates</strong></td>
+            <td>Manual RxJS state buffer / rollbacks</td>
+            <td><code>useMutation({ onMutate: async (newTodo) =&gt; { ... return { previousTodos }; }, onError: (err, newTodo, context) =&gt; { ... } })</code></td>
+          </tr>
+          <tr>
+            <td><strong>Infinite Scroll / Pagination</strong></td>
+            <td>Custom RxJS page accumulator scan</td>
+            <td><code>useInfiniteQuery({ queryKey: ['feed'], queryFn: fetchFeed, getNextPageParam: (lastPage) =&gt; lastPage.nextCursor })</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Primary Server State Packages</strong>
+        <p>In modern React, enterprise server-state synchronization relies on TanStack Query:</p>
+        <pre><code>npm install @tanstack/react-query @tanstack/react-query-devtools axios</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/@tanstack/react-query" target="_blank" rel="noopener"><strong><code>@tanstack/react-query</code></strong></a>: Core asynchronous data-fetching and server-state management library.</li>
+          <li><a href="https://www.npmjs.com/package/@tanstack/react-query-devtools" target="_blank" rel="noopener"><strong><code>@tanstack/react-query-devtools</code></strong></a>: Embedded visual panel for inspecting cache states, query keys, and fetch metrics in real time.</li>
+          <li><a href="https://www.npmjs.com/package/axios" target="_blank" rel="noopener"><strong><code>axios</code></strong></a>: Popular promise-based HTTP client (or native browser <code>fetch</code>).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Server State vs. Client State</h2>
+      <p>Angular developers often treat all data identically by storing server responses inside NgRx stores or service <code>BehaviorSubject</code>s. In React, architectural best practice strictly separates state into two categories:</p>
+
+      <div class="callout tip">
+        <strong>1. Server State (Handled by TanStack Query):</strong>
+        <p>Server state is data owned by a remote server (e.g. database records, user profiles, invoices). It is asynchronous, shared across multiple clients, and can become stale at any time. TanStack Query automatically manages caching, background re-fetching, deduplication, and stale status without requiring global Redux/NgRx actions!</p>
+      </div>
+
+      <div class="callout tip">
+        <strong>2. Client State (Handled by useState / Zustand):</strong>
+        <p>Client state is purely synchronous, local UI data (e.g. is a sidebar expanded, which modal is open, text typed in an unsaved form input). This belongs in <code>useState</code> or lightweight stores like <a href="https://www.npmjs.com/package/zustand" target="_blank" rel="noopener"><strong><code>zustand</code></strong></a>.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Query Keys as Reactive Dependency Arrays</h2>
+      <p>In Angular, when user filters change, you pipe a <code>BehaviorSubject</code> through <code>switchMap</code> to cancel previous HTTP requests and fetch new data. In TanStack Query, the <strong><code>queryKey</code></strong> array provides this exact behavior declaratively:</p>
+
+      <div class="callout tip">
+        <strong>Declarative Auto-Refetching with Query Keys:</strong>
+        <p>Whenever any variable inside the <code>queryKey</code> array changes (e.g. <code>role</code> or <code>page</code>), TanStack Query automatically cancels any inflight request and fetches fresh data for the new key:</p>
+        <pre><code>// TanStack Query v5 Syntax:
+export function UserList() {
+  const [role, setRole] = useState('admin');
+  const [page, setPage] = useState(1);
+
+  // When `role` or `page` changes, useQuery automatically re-fetches!
+  const { data, isPending } = useQuery({
+    queryKey: ['users', { role, page }],
+    queryFn: () =&gt; fetchUsers({ role, page }),
+    staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes
+  });
+
+  return ( ... );
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Side-by-Side Code Comparison: Full CRUD User Management Table</h2>
+      <p>Compare an enterprise user table featuring role filtering, loading spinners, and an asynchronous delete mutation in Angular vs. React:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (HttpClient + RxJS switchMap)</h3>
+          <pre><code>// user-list.component.ts
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, switchMap, catchError, of } from 'rxjs';
+
+interface User { id: string; name: string; role: string; }
+
+@Component({
+  selector: 'app-user-list',
+  templateUrl: './user-list.component.html'
+})
+export class UserListComponent implements OnInit {
+  selectedRole$ = new BehaviorSubject&lt;string&gt;('all');
+  users$ = this.selectedRole$.pipe(
+    switchMap(role =>
+      this.http.get&lt;User[]&gt;(`/api/users?role=${role}`).pipe(
+        catchError(() => of([]))
+      )
+    )
+  );
+
+  constructor(private http: HttpClient) {}
+
+  onRoleChange(role: string): void {
+    this.selectedRole$.next(role);
+  }
+
+  deleteUser(id: string): void {
+    this.http.delete(`/api/users/${id}`).subscribe(() => {
+      // Manually trigger refetch by re-emitting role
+      this.selectedRole$.next(this.selectedRole$.getValue());
+    });
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (TanStack Query useQuery &amp; useMutation)</h3>
+          <pre><code>// UserList.tsx
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+
+interface User { id: string; name: string; role: string; }
+
+export function UserList() {
+  const [selectedRole, setSelectedRole] = useState&lt;string&gt;('all');
+  const queryClient = useQueryClient();
+
+  // 1. Declarative Query (replaces RxJS switchMap & HttpClient)
+  const { data: users = [], isPending, isError } = useQuery&lt;User[]&gt;({
+    queryKey: ['users', selectedRole],
+    queryFn: async () =&gt; {
+      const res = await axios.get(`/api/users?role=${selectedRole}`);
+      return res.data;
+    }
+  });
+
+  // 2. Mutation with automatic cache invalidation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =&gt; axios.delete(`/api/users/${id}`),
+    onSuccess: () =&gt; {
+      // Invalidate & automatically trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  });
+
+  if (isPending) return &lt;div className="loader"&gt;Loading users...&lt;/div&gt;;
+  if (isError) return &lt;div className="error"&gt;Error loading users&lt;/div&gt;;
+
+  return (
+    &lt;div className="user-table-card"&gt;
+      &lt;select value={selectedRole} onChange={(e) =&gt; setSelectedRole(e.target.value)}&gt;
+        &lt;option value="all"&gt;All Roles&lt;/option&gt;
+        &lt;option value="admin"&gt;Admin&lt;/option&gt;
+        &lt;option value="member"&gt;Member&lt;/option&gt;
+      &lt;/select&gt;
+
+      &lt;ul&gt;
+        {users.map(user =&gt; (
+          &lt;li key={user.id}&gt;
+            {user.name} ({user.role})
+            &lt;button
+              onClick={() =&gt; deleteMutation.mutate(user.id)}
+              disabled={deleteMutation.isPending}
+            &gt;
+              Delete
+            &lt;/button&gt;
+          &lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Critical Data Pipeline Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>The <code>useEffect</code> Fetching Anti-Pattern</strong>:
+            <br>
+            Never write raw data fetching in <code>useEffect(() =&gt; { fetch(...) }, [])</code>. It lacks caching, produces race conditions during fast typing, double-fetches in Strict Mode, and requires dozens of lines of manual loading/error state management. Always use <code>useQuery</code>.
+          </li>
+          <li>
+            <strong><code>staleTime</code> vs. <code>gcTime</code> in TanStack Query v5</strong>:
+            <br>
+            <ul>
+              <li><strong><code>staleTime</code></strong> (default: <code>0</code>): How long data is considered fresh. When data is stale, it will be refetched in the background upon window focus or component mount.</li>
+              <li><strong><code>gcTime</code></strong> (default: <code>5 minutes</code>, previously <code>cacheTime</code>): How long inactive query data remains cached in memory before being garbage collected.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Query Keys Must Be Serializable Objects/Arrays</strong>:
+            <br>
+            TanStack Query hashes query keys deterministically. Pass primitives, arrays, and objects (e.g. <code>['todos', { status, page }]</code>). Never pass non-serializable objects or functions into <code>queryKey</code>.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/@tanstack/react-query" target="_blank" rel="noopener"><strong>@tanstack/react-query (npm)</strong></a> &bull; <a href="https://tanstack.com/query/latest" target="_blank" rel="noopener">TanStack Query Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/@tanstack/react-query-devtools" target="_blank" rel="noopener"><strong>@tanstack/react-query-devtools (npm)</strong></a> &bull; <a href="https://tanstack.com/query/latest/docs/framework/react/devtools" target="_blank" rel="noopener">Devtools Installation &amp; Guide</a></li>
+        <li><a href="https://www.npmjs.com/package/axios" target="_blank" rel="noopener"><strong>axios (npm)</strong></a> &bull; <a href="https://axios-http.com" target="_blank" rel="noopener">Axios Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev" target="_blank" rel="noopener">React Official Documentation</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0008-routing-architecture-router-vs-react-router-nextjs.html">&larr; Previous: Lesson 0008</a> &bull; <a href="./0010-css-component-styling-architecture.html">Next: Lesson 0010 &rarr;</a></p>
+  </footer>
+</body>
+</html>

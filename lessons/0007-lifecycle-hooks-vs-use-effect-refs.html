@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0007: Lifecycle Hooks vs. useEffect & Refs</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0006-angular-services-di-vs-context-custom-hooks.html" class="nav-prev">&larr; Previous: Lesson 0006</a>
+        <a href="./0008-routing-architecture-router-vs-react-router-nextjs.html" class="nav-next">Next: Lesson 0008 &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0007: Lifecycle Hooks vs. useEffect &amp; Refs</h1>
+    <div class="subtitle">Translating ngOnInit, ngOnDestroy, ngOnChanges, ngAfterViewInit, and @ViewChild to React useEffect synchronization, cleanup returns, and useRef</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Lifecycle &amp; DOM References Translation Matrix</h2>
+      <p>In Angular, components follow a strict, time-based class lifecycle (<code>constructor</code> &rarr; <code>ngOnChanges</code> &rarr; <code>ngOnInit</code> &rarr; <code>ngAfterViewInit</code> &rarr; <code>ngOnDestroy</code>). In React, functional components have no time-based lifecycle methods: <strong><code>useEffect</code> is a synchronization mechanism</strong> that connects React state to external systems, while <strong><code>useRef</code></strong> holds mutable values and direct DOM references without triggering re-renders.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Mount / Initialization</strong></td>
+            <td><code>ngOnInit(): void { ... }</code></td>
+            <td><code>useEffect(() =&gt; { ... }, []);</code><br><em>(Empty dependency array runs once on mount)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Unmount / Cleanup</strong></td>
+            <td><code>ngOnDestroy(): void { ... }</code></td>
+            <td><code>useEffect(() =&gt; { return () =&gt; { cleanup(); }; }, []);</code><br><em>(Returned function runs on unmount)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Input / Prop Change Detection</strong></td>
+            <td><code>ngOnChanges(changes: SimpleChanges)</code></td>
+            <td><code>useEffect(() =&gt; { ... }, [propValue]);</code><br><em>(Runs when <code>propValue</code> reference changes)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Direct DOM Element Reference</strong></td>
+            <td><code>@ViewChild('inputRef') inputRef!: ElementRef;</code><br><code>this.inputRef.nativeElement.focus();</code></td>
+            <td><code>const inputRef = useRef&lt;HTMLInputElement&gt;(null);</code><br><code>&lt;input ref={inputRef} /&gt;</code><br><code>inputRef.current?.focus();</code></td>
+          </tr>
+          <tr>
+            <td><strong>Mutable Instance Variables</strong></td>
+            <td>Class property:<br><code>private timerId: number;</code></td>
+            <td><code>const timerRef = useRef&lt;number | null&gt;(null);</code><br><em>(Persists across renders without re-rendering)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Synchronous DOM Measurement</strong></td>
+            <td><code>ngAfterViewInit(): void { ... }</code></td>
+            <td><code>useLayoutEffect(() =&gt; { ... }, []);</code><br><em>(Fires synchronously after DOM mutations before browser paint)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Exposing Imperative Child Methods</strong></td>
+            <td><code>@ViewChild(ChildComponent) child!: ChildComponent;</code><br><code>this.child.customMethod();</code></td>
+            <td><code>useImperativeHandle(ref, () =&gt; ({ customMethod }))</code><br>with <code>forwardRef</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Deep Dive: Lifecycles vs. Synchronization with External Systems</h2>
+      <p>The single biggest paradigm shift for Angular developers is understanding what <code>useEffect</code> is designed for:</p>
+
+      <div class="callout warning">
+        <strong>The Angular Mental Model (Time Checkpoints):</strong>
+        <p>In Angular, you think: <em>"When this component initializes (<code>ngOnInit</code>), fetch data. When an input changes (<code>ngOnChanges</code>), recalculate state. When it destroys (<code>ngOnDestroy</code>), clean up."</em></p>
+      </div>
+
+      <div class="callout tip">
+        <strong>The React Mental Model (Synchronize External Systems):</strong>
+        <p>In React, an Effect does not represent a point in time; it represents <strong>synchronization with something outside of React's render loop</strong> (e.g. Browser Event Listeners, WebSockets, Timers, LocalStorage, or 3rd-party non-React libraries like Chart.js or Mapbox).</p>
+      </div>
+
+      <div class="callout tip">
+        <strong>⚡ "You Might Not Need an Effect" (The Golden React Rule):</strong>
+        <p>Angular developers often write unnecessary <code>useEffect</code> hooks to sync props into local state. If a value can be computed directly from existing props or state, <strong>compute it inline during render</strong> instead of triggering an extra effect and re-render cycle!</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. `useRef`: The Two Distinct Superpowers</h2>
+      <p>In Angular, you use <code>@ViewChild</code> for DOM elements and class properties for instance variables. In React, the <a href="https://react.dev/reference/react/useRef" target="_blank" rel="noopener"><strong><code>useRef</code></strong></a> hook handles both with two distinct use cases:</p>
+
+      <div class="callout tip">
+        <strong>Superpower 1: Referencing Native DOM Nodes (Focus, Scroll, Measurements)</strong>
+        <pre><code>import { useRef } from 'react';
+
+export function SearchInput() {
+  const inputRef = useRef&lt;HTMLInputElement&gt;(null);
+
+  function handleFocus() {
+    inputRef.current?.focus();
+  }
+
+  return (
+    &lt;&gt;
+      &lt;input ref={inputRef} placeholder="Search..." /&gt;
+      &lt;button onClick={handleFocus}&gt;Focus Input&lt;/button&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>Superpower 2: Storing Mutable Values Across Renders (Without Triggering Re-Renders)</strong>
+        <p>Updating <code>useState</code> schedules a re-render. Updating <code>ref.current = value</code> <strong>does not re-render</strong>. This makes refs ideal for timer IDs, AbortControllers, WebSocket connection handles, and tracking previous state:</p>
+        <pre><code>export function AutoTimer() {
+  const [seconds, setSeconds] = useState(0);
+  const timerIdRef = useRef&lt;number | null&gt;(null);
+
+  function start() {
+    if (timerIdRef.current !== null) return;
+    timerIdRef.current = window.setInterval(() =&gt; {
+      setSeconds(s =&gt; s + 1);
+    }, 1000);
+  }
+
+  function stop() {
+    if (timerIdRef.current !== null) {
+      clearInterval(timerIdRef.current);
+      timerIdRef.current = null;
+    }
+  }
+
+  return &lt;div&gt;Seconds: {seconds} &lt;button onClick={start}&gt;Start&lt;/button&gt; &lt;button onClick={stop}&gt;Stop&lt;/button&gt;&lt;/div&gt;;
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Side-by-Side Code Comparison: Real-Time WebSocket Terminal with Auto-Scroll</h2>
+      <p>Compare how a live WebSocket log stream with auto-scrolling DOM container, window resize listening, and comprehensive teardown cleanup is built in Angular vs. React:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (Lifecycle Methods + ViewChild)</h3>
+          <pre><code>// log-terminal.component.ts
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+
+@Component({
+  selector: 'app-terminal',
+  templateUrl: './log-terminal.component.html'
+})
+export class LogTerminalComponent implements OnInit, OnDestroy, AfterViewChecked {
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+  logs: string[] = [];
+  private socket!: WebSocket;
+  private resizeHandler = () => this.handleResize();
+
+  ngOnInit(): void {
+    // 1. Connect external WebSocket
+    this.socket = new WebSocket('wss://api.example.com/logs');
+    this.socket.onmessage = (event) => {
+      this.logs.push(event.data);
+    };
+
+    // 2. Add browser window event listener
+    window.addEventListener('resize', this.resizeHandler);
+  }
+
+  ngAfterViewChecked(): void {
+    // 3. Scroll to bottom
+    this.scrollToBottom();
+  }
+
+  ngOnDestroy(): void {
+    // 4. Teardown WebSocket & event listener
+    this.socket.close();
+    window.removeEventListener('resize', this.resizeHandler);
+  }
+
+  private scrollToBottom(): void {
+    if (this.scrollContainer) {
+      const el = this.scrollContainer.nativeElement;
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+
+  private handleResize(): void {
+    console.log('Window resized');
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (useEffect Synchronization + useRef)</h3>
+          <pre><code>// LogTerminal.tsx
+import React, { useState, useEffect, useRef } from 'react';
+
+export function LogTerminal() {
+  const [logs, setLogs] = useState&lt;string[]&gt;([]);
+  const terminalRef = useRef&lt;HTMLDivElement&gt;(null);
+
+  // Effect 1: Synchronize with WebSocket external data stream
+  useEffect(() => {
+    const socket = new WebSocket('wss://api.example.com/logs');
+    
+    socket.onmessage = (event) => {
+      setLogs((prevLogs) => [...prevLogs, event.data]);
+    };
+
+    // Automatic cleanup on unmount
+    return () => {
+      socket.close();
+    };
+  }, []); // Empty deps = connect on mount, close on unmount
+
+  // Effect 2: Synchronize with window resize events
+  useEffect(() => {
+    function handleResize() {
+      console.log('Window resized');
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Effect 3: Auto-scroll whenever new logs arrive
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  return (
+    &lt;div className="terminal-wrapper"&gt;
+      &lt;div ref={terminalRef} className="terminal-logs" style={{ maxHeight: 300, overflowY: 'auto' }}&gt;
+        {logs.map((log, index) =&gt; (
+          &lt;div key={index} className="log-entry"&gt;{log}&lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Critical Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>React 18/19 Strict Mode Double-Mounting</strong>:
+            <br>
+            In development mode with <code>&lt;React.StrictMode&gt;</code>, React deliberately mounts, unmounts, and re-mounts every component (<code>setup &rarr; cleanup &rarr; setup</code>). This intentionally exposes bugs where developers forget to remove event listeners, abort fetches, or close WebSockets in their cleanup function!
+          </li>
+          <li>
+            <strong>The Infinite Re-Render Loop</strong>:
+            <br>
+            Calling <code>setState</code> inside <code>useEffect</code> without passing a dependency array (<code>useEffect(() =&gt; { setCount(c =&gt; c + 1); })</code>) causes an infinite render loop: render &rarr; effect runs &rarr; state changes &rarr; re-render &rarr; effect runs again.
+          </li>
+          <li>
+            <strong>Do NOT Read or Write <code>ref.current</code> During Render</strong>:
+            <br>
+            Never modify or read <code>ref.current</code> inside the body of your component function during JSX generation (e.g. <code>ref.current = count + 1</code>). Only access refs inside <code>useEffect</code> callbacks or event handlers to ensure pure, predictable rendering.
+          </li>
+          <li>
+            <strong><code>useLayoutEffect</code> vs. <code>useEffect</code></strong>:
+            <br>
+            <code>useEffect</code> runs asynchronously after the browser paints the screen (preventing UI blocking). Use <code>useLayoutEffect</code> only when you need to synchronously measure DOM nodes before the user sees the screen to prevent visual layout flicker (e.g. tooltip popover positioning).
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev/learn/synchronizing-with-effects" target="_blank" rel="noopener">Synchronizing with Effects</a></li>
+        <li><a href="https://react.dev/learn/you-might-not-need-an-effect" target="_blank" rel="noopener">React Official Docs — You Might Not Need an Effect (Best Practices)</a></li>
+        <li><a href="https://react.dev/reference/react/useEffect" target="_blank" rel="noopener">React Official Docs — useEffect Hook Reference</a></li>
+        <li><a href="https://react.dev/learn/referencing-values-with-refs" target="_blank" rel="noopener">React Official Docs — Referencing Values with Refs</a></li>
+        <li><a href="https://react.dev/learn/manipulating-the-dom-with-refs" target="_blank" rel="noopener">React Official Docs — Manipulating the DOM with Refs</a></li>
+        <li><a href="https://www.npmjs.com/package/@types/react" target="_blank" rel="noopener"><strong>@types/react (npm)</strong></a> &bull; <a href="https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#useref" target="_blank" rel="noopener">React TypeScript Cheatsheet — useRef Typing</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0006-angular-services-di-vs-context-custom-hooks.html">&larr; Previous: Lesson 0006</a> &bull; <a href="./0008-routing-architecture-router-vs-react-router-nextjs.html">Next: Lesson 0008 &rarr;</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0011: Performance Optimization & Reconciliation</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0010-css-component-styling-architecture.html" class="nav-prev">&larr; Previous: Lesson 0010</a>
+        <a href="./0012-complex-global-state-ngrx-vs-zustand-rtk.html" class="nav-next">Next: Lesson 0012 &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0011: Performance Optimization &amp; Reconciliation</h1>
+    <div class="subtitle">Translating Zone.js change detection &amp; OnPush strategy to Virtual DOM Fiber reconciliation, React.memo, useMemo, useCallback, and the React 19 Compiler</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Performance &amp; Change Detection Translation Matrix</h2>
+      <p>In Angular, <strong>Zone.js</strong> monkey-patches asynchronous browser APIs to trigger global dirty checking across the component tree, optimized via <code>ChangeDetectionStrategy.OnPush</code> and Signals. React relies on <strong>Virtual DOM Fiber reconciliation</strong>: when <code>setState</code> is called, React renders the component and its children, diffs the new tree against the old tree, and commits only the minimal DOM changes to the browser.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Change Detection Engine</strong></td>
+            <td><strong>Zone.js</strong> dirty checking / Signals dependency graph</td>
+            <td><strong>Virtual DOM Fiber Reconciliation:</strong> Scheduled top-down subtree renders upon state dispatch</td>
+          </tr>
+          <tr>
+            <td><strong>Skipping Subtree Re-Renders</strong></td>
+            <td><code>changeDetection: ChangeDetectionStrategy.OnPush</code></td>
+            <td><code>React.memo(Component)</code><br><em>(Skips re-rendering if props are referentially identical)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Caching Expensive Computations</strong></td>
+            <td>Pure Pipes (<code>@Pipe({ pure: true })</code>)<br>or <code>computed(() =&gt; ...)</code></td>
+            <td><code>useMemo(() =&gt; expensiveCalculation(data), [data])</code></td>
+          </tr>
+          <tr>
+            <td><strong>Stable Callback References</strong></td>
+            <td>Class instance methods (natively referentially stable)</td>
+            <td><code>useCallback((id) =&gt; handleClick(id), [deps])</code></td>
+          </tr>
+          <tr>
+            <td><strong>Granular Micro-Updates</strong></td>
+            <td>Signals direct template text node updates</td>
+            <td>Virtual DOM diffing or direct <code>useRef</code> element manipulation</td>
+          </tr>
+          <tr>
+            <td><strong>Automatic Memoization</strong></td>
+            <td>Angular template compiler static binding analysis</td>
+            <td><strong>React 19 Compiler:</strong> Automatically analyzes dependencies and memoizes JSX, hooks, and callbacks at build time</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. Deep Dive: Referential Equality &amp; The Re-render Cascade</h2>
+      <p>Angular developers moving to React must grasp how JavaScript <strong>referential equality (<code>===</code>)</strong> governs React's rendering lifecycle:</p>
+
+      <div class="callout warning">
+        <strong>Why Unmemoized Functions &amp; Objects Trigger Re-renders:</strong>
+        <p>In React, whenever a parent component renders, any object literal (<code>{ id: 1 }</code>) or inline arrow function (<code>() =&gt; doSomething()</code>) declared inside the function body is allocated as a <strong>completely new memory reference</strong>. If passed to a child wrapped in <code>React.memo()</code>, the shallow comparison fails (<code>oldProps.onClick !== newProps.onClick</code>), forcing the child to re-render anyway!</p>
+      </div>
+
+      <div class="callout tip">
+        <strong>The Solution: `useCallback` and `useMemo`</strong>
+        <pre><code>// ParentComponent.tsx
+import React, { useState, useCallback, useMemo } from 'react';
+
+export function ParentComponent() {
+  const [query, setQuery] = useState('');
+  const [items, setItems] = useState&lt;Item[]&gt;([]);
+
+  // 1. Cache function reference across renders
+  const handleDelete = useCallback((id: string) =&gt; {
+    setItems(prev =&gt; prev.filter(item =&gt; item.id !== id));
+  }, []); // Stable reference across all renders
+
+  // 2. Cache expensive calculation across renders
+  const filteredItems = useMemo(() =&gt; {
+    return items.filter(item =&gt; item.name.toLowerCase().includes(query.toLowerCase()));
+  }, [items, query]); // Only recomputes when items or query change
+
+  return &lt;MemoizedList items={filteredItems} onDelete={handleDelete} /&gt;;
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Real-Time High-Throughput Financial Data Grid</h2>
+      <p>Compare a real-time table rendering hundreds of streaming updates per second in Angular (OnPush + Pure Pipe) vs. React (React.memo + useCallback + useMemo):</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (OnPush + Pure Pipe)</h3>
+          <pre><code>// stock-row.component.ts
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+
+@Component({
+  selector: 'app-stock-row',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    &lt;tr&gt;
+      &lt;td&gt;{{ stock.symbol }}&lt;/td&gt;
+      &lt;td [class.up]="stock.price &gt; stock.prevPrice"&gt;
+        {{ stock.price | currency }}
+      &lt;/td&gt;
+      &lt;td&gt;
+        &lt;button (click)="onSelect.emit(stock.symbol)"&gt;Details&lt;/button&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  `
+})
+export class StockRowComponent {
+  @Input() stock!: Stock;
+  @Output() onSelect = new EventEmitter&lt;string&gt;();
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (React.memo + useCallback)</h3>
+          <pre><code>// StockRow.tsx
+import React from 'react';
+
+interface StockRowProps {
+  stock: Stock;
+  onSelect: (symbol: string) =&gt; void;
+}
+
+// React.memo skips re-rendering if stock and onSelect references do not change
+export const StockRow = React.memo(function StockRow({ stock, onSelect }: StockRowProps) {
+  const isUp = stock.price &gt; stock.prevPrice;
+
+  return (
+    &lt;tr&gt;
+      &lt;td&gt;{stock.symbol}&lt;/td&gt;
+      &lt;td className={isUp ? 'text-green-600' : 'text-red-600'}&gt;
+        ${stock.price.toFixed(2)}
+      &lt;/td&gt;
+      &lt;td&gt;
+        &lt;button onClick={() =&gt; onSelect(stock.symbol)}&gt;Details&lt;/button&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  );
+});</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Critical Performance Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Premature Optimization Overhead</strong>:
+            <br>
+            Wrapping simple mathematical calculations or string interpolations (e.g. <code>useMemo(() =&gt; a + b, [a, b])</code>) actually degrades performance due to dependency array comparison and memory overhead. Use <code>useMemo</code> only for operations that genuinely cost significant CPU time (e.g. sorting/filtering thousands of array items, parsing large JSON objects, or calculating geometry).
+          </li>
+          <li>
+            <strong>Virtual DOM Re-rendering != Real DOM Painting</strong>:
+            <br>
+            A React component re-rendering simply means calling its function to produce a new virtual element tree. If the resulting virtual tree matches the previous tree, <strong>zero real DOM writes occur</strong>. Do not panic over re-renders unless they cause measurable frame drops or slow interactions.
+          </li>
+          <li>
+            <strong>The React 19 Compiler Shift</strong>:
+            <br>
+            In React 19, the new React Compiler analyzes pure JavaScript semantics at build time and automatically memoizes values and functions, eliminating the need to manually sprinkle <code>useMemo</code>, <code>useCallback</code>, and <code>React.memo</code> across standard codebase files.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev/reference/react/memo" target="_blank" rel="noopener">React Official Docs — memo Reference</a></li>
+        <li><a href="https://react.dev/reference/react/useMemo" target="_blank" rel="noopener">React Official Docs — useMemo Reference</a></li>
+        <li><a href="https://react.dev/reference/react/useCallback" target="_blank" rel="noopener">React Official Docs — useCallback Reference</a></li>
+        <li><a href="https://react.dev/learn/react-compiler" target="_blank" rel="noopener">React 19 Docs — React Compiler Architecture</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0010-css-component-styling-architecture.html">&larr; Previous: Lesson 0010</a> &bull; <a href="./0012-complex-global-state-ngrx-vs-zustand-rtk.html">Next: Lesson 0012 &rarr;</a></p>
+  </footer>
+</body>
+</html>

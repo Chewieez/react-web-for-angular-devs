@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0014: Component & Integration Testing (TestBed vs. Vitest & RTL)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <div class="nav-arrows">
+        <a href="./0013-server-side-rendering-ssr-react-server-components-rsc.html" class="nav-prev">&larr; Previous: Lesson 0013</a>
+      </div>
+    </nav>
+    <h1>Lesson 0014: Component &amp; Integration Testing</h1>
+    <div class="subtitle">Translating Angular TestBed, ComponentFixture, By.css, and fakeAsync to Vitest, React Testing Library, user-event, and accessibility queries</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Testing Architecture Translation Matrix</h2>
+      <p>In Angular, component tests rely on <code>TestBed</code>, <code>ComponentFixture</code>, and DOM querying via CSS selectors (<code>By.css('.btn')</code>). In modern React Web development, testing has standardized around <a href="https://www.npmjs.com/package/vitest" target="_blank" rel="noopener"><strong><code>vitest</code></strong></a> and <a href="https://www.npmjs.com/package/@testing-library/react" target="_blank" rel="noopener"><strong><code>@testing-library/react</code></strong></a> (RTL), emphasizing <strong>user-centric accessibility queries</strong> (testing components the way real users and screen readers interact with them).</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Test Runner &amp; Assertions</strong></td>
+            <td>Karma / Jasmine / Jest</td>
+            <td><a href="https://www.npmjs.com/package/vitest" target="_blank" rel="noopener"><strong><code>vitest</code></strong></a>: Ultra-fast Vite-native test runner with Jest-compatible API</td>
+          </tr>
+          <tr>
+            <td><strong>Component Mounting / Setup</strong></td>
+            <td><code>TestBed.configureTestingModule({ ... })</code><br><code>fixture = TestBed.createComponent(CardComponent)</code></td>
+            <td><code>render(&lt;Card /&gt;)</code> from <code>@testing-library/react</code></td>
+          </tr>
+          <tr>
+            <td><strong>Querying Elements</strong></td>
+            <td><code>fixture.debugElement.query(By.css('.submit-btn'))</code><br><em>(Implementation-detail CSS querying)</em></td>
+            <td><strong>Accessible Queries:</strong><br><code>screen.getByRole('button', { name: /submit/i })</code><br><code>screen.getByLabelText(/email/i)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Simulating User Actions</strong></td>
+            <td><code>btn.nativeElement.click()</code><br>+ <code>fixture.detectChanges()</code></td>
+            <td><a href="https://www.npmjs.com/package/@testing-library/user-event" target="_blank" rel="noopener"><strong><code>userEvent.click(btn)</code></strong></a><br><em>(Simulates real browser hover, focus, and keypress events)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Async Timers &amp; Debounce</strong></td>
+            <td><code>fakeAsync(() =&gt; { tick(500); })</code></td>
+            <td><code>vi.useFakeTimers()</code> + <code>vi.advanceTimersByTime(500)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Mocking Functions &amp; Modules</strong></td>
+            <td><code>jasmine.createSpyObj('AuthService', ['login'])</code></td>
+            <td><code>vi.fn()</code> and <code>vi.mock('./api')</code></td>
+          </tr>
+          <tr>
+            <td><strong>DOM Assertions</strong></td>
+            <td><code>expect(el.nativeElement.textContent).toContain('Success')</code></td>
+            <td><a href="https://www.npmjs.com/package/@testing-library/jest-dom" target="_blank" rel="noopener"><strong><code>@testing-library/jest-dom</code></strong></a>:<br><code>expect(screen.getByText(/success/i)).toBeInTheDocument()</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Essential Testing Stack for Modern React</strong>
+        <p>The standard modern testing toolchain in React:</p>
+        <pre><code>npm install -D vitest @testing-library/react @testing-library/user-event @testing-library/jest-dom jsdom</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/vitest" target="_blank" rel="noopener"><strong><code>vitest</code></strong></a>: Blazing-fast test runner native to modern bundlers.</li>
+          <li><a href="https://www.npmjs.com/package/@testing-library/react" target="_blank" rel="noopener"><strong><code>@testing-library/react</code></strong></a>: Simple and complete React DOM testing utilities.</li>
+          <li><a href="https://www.npmjs.com/package/@testing-library/user-event" target="_blank" rel="noopener"><strong><code>@testing-library/user-event</code></strong></a>: Advanced user action simulator.</li>
+          <li><a href="https://www.npmjs.com/package/@testing-library/jest-dom" target="_blank" rel="noopener"><strong><code>@testing-library/jest-dom</code></strong></a>: Custom DOM matchers (<code>toBeInTheDocument</code>, <code>toBeDisabled</code>, <code>toHaveValue</code>).</li>
+          <li><a href="https://www.npmjs.com/package/jsdom" target="_blank" rel="noopener"><strong><code>jsdom</code></strong></a>: Pure JavaScript implementation of the DOM for Node test environments.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Testing User Behavior Instead of Implementation Details</h2>
+      <p>Angular unit tests frequently assert on internal class properties (e.g. <code>expect(component.isSubmitting).toBe(true)</code>) or query internal CSS class names (<code>By.css('.btn-primary')</code>). React Testing Library enforces the golden rule of testing:</p>
+
+      <div class="callout tip">
+        <strong>The Testing Library Philosophy:</strong>
+        <p><em>"The more your tests resemble the way your software is used, the more confidence they can give you."</em></p>
+        <ul>
+          <li><strong>Query by Accessible Role</strong>: <code>screen.getByRole('button', { name: /login/i })</code> ensures your UI is accessible to screen readers and resilient to CSS/DOM refactoring.</li>
+          <li><strong>Query by Label</strong>: <code>screen.getByLabelText(/username/i)</code> ensures inputs are properly associated with <code>&lt;label&gt;</code> elements.</li>
+          <li><strong>Never assert on private state</strong>: Test what appears on the screen (the output), not the internal <code>useState</code> variables.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: User Signup Form Integration Test</h2>
+      <p>Compare how a user signup form with validation and asynchronous submission is tested in Angular (TestBed) vs. React (Vitest + React Testing Library):</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular TestBed Test</h3>
+          <pre><code>// signup.component.spec.ts
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { SignupComponent } from './signup.component';
+import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
+
+describe('SignupComponent', () => {
+  let component: SignupComponent;
+  let fixture: ComponentFixture&lt;SignupComponent&gt;;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [SignupComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(SignupComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('submits form with valid data', fakeAsync(() => {
+    // Fill inputs via nativeElement
+    const emailInput = fixture.debugElement.query(By.css('input[type="email"]')).nativeElement;
+    emailInput.value = 'lead@company.com';
+    emailInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    // Click submit button
+    const submitBtn = fixture.debugElement.query(By.css('button[type="submit"]')).nativeElement;
+    submitBtn.click();
+    fixture.detectChanges();
+    tick();
+
+    // Verify component internal state
+    expect(component.isSubmitted).toBe(true);
+  }));
+});</code></pre>
+        </div>
+
+        <div>
+          <h3>React Vitest + React Testing Library Test</h3>
+          <pre><code>// SignupForm.test.tsx
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi } from 'vitest';
+import { SignupForm } from './SignupForm';
+
+describe('SignupForm', () => {
+  it('submits form with valid data', async () => {
+    const user = userEvent.setup();
+    const handleSubmit = vi.fn();
+
+    render(&lt;SignupForm onSubmit={handleSubmit} /&gt;);
+
+    // 1. Fill inputs using accessible labels
+    const emailInput = screen.getByLabelText(/email address/i);
+    await user.type(emailInput, 'lead@company.com');
+
+    // 2. Click submit button using accessible role
+    const submitBtn = screen.getByRole('button', { name: /sign up/i });
+    await user.click(submitBtn);
+
+    // 3. Assert on what the user sees & callback execution
+    expect(handleSubmit).toHaveBeenCalledWith({ email: 'lead@company.com' });
+    expect(screen.getByText(/welcome aboard/i)).toBeInTheDocument();
+  });
+});</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Critical Testing Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Always <code>await userEvent</code> Interactions</strong>:
+            <br>
+            Unlike <code>fireEvent.click()</code> (which only triggers a single synthetic click), <code>userEvent.click()</code> simulates true browser sequences (hover &rarr; mousedown &rarr; focus &rarr; mouseup &rarr; click). Because <code>userEvent</code> actions are asynchronous, you must always <code>await user.click(...)</code> and <code>await user.type(...)</code>.
+          </li>
+          <li>
+            <strong>Avoid <code>container.querySelector('.my-class')</code></strong>:
+            <br>
+            Querying with CSS selectors breaks whenever classes or DOM structures are refactored. Always prioritize <code>screen.getByRole</code>, <code>screen.getByLabelText</code>, and <code>screen.getByText</code>.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/vitest" target="_blank" rel="noopener"><strong>vitest (npm)</strong></a> &bull; <a href="https://vitest.dev" target="_blank" rel="noopener">Vitest Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/@testing-library/react" target="_blank" rel="noopener"><strong>@testing-library/react (npm)</strong></a> &bull; <a href="https://testing-library.com/docs/react-testing-library/intro" target="_blank" rel="noopener">React Testing Library Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/@testing-library/user-event" target="_blank" rel="noopener"><strong>@testing-library/user-event (npm)</strong></a> &bull; <a href="https://testing-library.com/docs/user-event/intro" target="_blank" rel="noopener">User Event Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/@testing-library/jest-dom" target="_blank" rel="noopener"><strong>@testing-library/jest-dom (npm)</strong></a> &bull; <a href="https://github.com/testing-library/jest-dom" target="_blank" rel="noopener">Custom Matchers Reference</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a href="./0013-server-side-rendering-ssr-react-server-components-rsc.html">&larr; Previous: Lesson 0013</a> &bull; <strong>🎉 Curriculum Complete!</strong></p>
+  </footer>
+</body>
+</html>
