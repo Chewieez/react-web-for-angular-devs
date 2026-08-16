@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0005: Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+
+<body>
+  <header>
+    <h1>Lesson 0005: Forms Masterclass</h1>
+    <div class="subtitle">Translating Angular ReactiveFormsModule (FormGroup, FormControl, Validators,
+      ControlValueAccessor, FormArray) to React Hook Form & Zod</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Forms Concept Translation Matrix</h2>
+      <p>Angular provides a heavy, object-oriented form system via <code>@angular/forms</code> (<code>FormGroup</code>,
+        <code>FormControl</code>, <code>Validators</code>) managed as in-memory class instances. In modern React, the
+        industry standard is <strong>React Hook Form (RHF)</strong> combined with <strong>Zod</strong>: an
+        ultra-lightweight, uncontrolled form architecture that provides compile-time type inference, runtime schema
+        validation, and zero re-renders on keystroke.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Form Model / Container</strong></td>
+            <td><code>fb.group({ email: ['', Validators.required] })</code></td>
+            <td>
+              <code>const { register, handleSubmit, formState: { errors } } = useForm&lt;FormValues&gt;({ resolver: zodResolver(schema) });</code>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Control Binding</strong></td>
+            <td><code>&lt;input formControlName="email" /&gt;</code></td>
+            <td><code>&lt;input {...register('email')} /&gt;</code><br><em>(Spreads name, ref, onChange, onBlur)</em>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Schema &amp; Validation</strong></td>
+            <td><code>Validators.required</code>, <code>Validators.email</code>, custom validator functions</td>
+            <td><strong>Zod Schema:</strong><br><code>z.object({ email: z.string().email() })</code></td>
+          </tr>
+          <tr>
+            <td><strong>Type Safety &amp; Inference</strong></td>
+            <td>Angular Typed Forms: <code>FormGroup&lt;{ email: FormControl&lt;string&gt; }&gt;</code></td>
+            <td><code>type FormValues = z.infer&lt;typeof schema&gt;;</code><br><em>(Single source of truth)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Form State &amp; Validation Flags</strong></td>
+            <td><code>form.valid</code>, <code>form.dirty</code>, <code>form.touched</code>,
+              <code>form.get('email')?.errors</code>
+            </td>
+            <td><code>formState: { isValid, isDirty, isSubmitting, errors }</code></td>
+          </tr>
+          <tr>
+            <td><strong>Form Submission</strong></td>
+            <td><code>&lt;form (ngSubmit)="onSubmit()"&gt;</code></td>
+            <td><code>&lt;form onSubmit={handleSubmit(onSubmit)}&gt;</code><br><em>(Automatically validates before
+                calling onSubmit)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Watching Field Changes</strong></td>
+            <td><code>this.form.get('role').valueChanges.pipe(...)</code></td>
+            <td><code>const role = watch('role');</code><br>or
+              <code>const role = useWatch({ control, name: 'role' });</code>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Custom / Complex Inputs</strong></td>
+            <td><code>ControlValueAccessor</code> (CVA interface: <code>writeValue</code>,
+              <code>registerOnChange</code>)
+            </td>
+            <td>
+              <code>&lt;Controller control={control} name="date" render={({ field }) =&gt; &lt;DatePicker {...field} /&gt;} /&gt;</code>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Dynamic Form Arrays</strong></td>
+            <td><code>FormArray</code>: <code>form.get('items') as FormArray</code></td>
+            <td><code>const { fields, append, remove } = useFieldArray({ control, name: 'items' });</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 NPM Library Spotlight: <a href="https://www.npmjs.com/package/react-hook-form" target="_blank" rel="noopener"><code>react-hook-form</code></a>, <a href="https://www.npmjs.com/package/zod" target="_blank" rel="noopener"><code>zod</code></a> &amp; <a href="https://www.npmjs.com/package/@hookform/resolvers" target="_blank" rel="noopener"><code>@hookform/resolvers</code></a></strong>
+        <p>In modern React, enterprise form management relies on three focused npm packages:</p>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/react-hook-form" target="_blank" rel="noopener"><strong><code>react-hook-form</code></strong></a>: Performant, flexible, and extensible form validation using uncontrolled DOM refs.</li>
+          <li><a href="https://www.npmjs.com/package/zod" target="_blank" rel="noopener"><strong><code>zod</code></strong></a>: TypeScript-first schema declaration and runtime validation library.</li>
+          <li><a href="https://www.npmjs.com/package/@hookform/resolvers" target="_blank" rel="noopener"><strong><code>@hookform/resolvers</code></strong></a>: Official standard resolver connecting Zod validation schemas into React Hook Form.</li>
+        </ul>
+        <pre><code>npm install react-hook-form zod @hookform/resolvers</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Uncontrolled Performance vs. Controlled Inputs</h2>
+      <p>Angular developers often make the mistake of creating a <code>useState</code> hook for every form input.
+        Understanding the difference between <strong>controlled</strong> and <strong>uncontrolled</strong> inputs is key
+        to React performance:</p>
+
+      <div class="callout warning">
+        <strong>Controlled Inputs (Re-renders on every keystroke):</strong>
+        <pre><code>// ❌ Controlled: Component function re-executes on EVERY keystroke!
+const [email, setEmail] = useState('');
+return &lt;input value={email} onChange={(e) => setEmail(e.target.value)} /&gt;;</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>React Hook Form (Uncontrolled with DOM refs — 0 re-renders while typing):</strong>
+        <pre><code>// ✅ Uncontrolled: React Hook Form attaches a ref directly to the native DOM element.
+// Typing is handled natively by the browser at 120fps without re-rendering the component.
+return &lt;input {...register('email')} /&gt;;</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Schema-Driven Validation with Zod</h2>
+      <p>In Angular, you often duplicate validation logic: once in TypeScript interfaces, once in
+        <code>Validators</code> arrays, and sometimes on the backend. With Zod in React, your schema is the
+        <strong>single source of truth</strong> for both compile-time types and runtime validation:
+      </p>
+
+      <pre><code>import { z } from 'zod';
+
+// 1. Define the validation schema with rich constraints & custom error messages
+export const registerSchema = z.object({
+  fullName: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'] // Attach error to confirmPassword field
+});
+
+// 2. Automatically derive the static TypeScript type:
+export type RegisterFormValues = z.infer&lt;typeof registerSchema&gt;;
+// Results in: { fullName: string; email: string; password: string; confirmPassword: string; }</code></pre>
+    </section>
+
+    <section>
+      <h2>4. Custom Components: `ControlValueAccessor` vs. `&lt;Controller&gt;`</h2>
+      <p>In Angular, creating a custom input component (like a custom dropdown, rich text editor, or date picker)
+        requires implementing the verbose <code>ControlValueAccessor</code> interface with
+        <code>NG_VALUE_ACCESSOR</code> multi-provider injection. In React Hook Form, you simply wrap any non-native
+        input inside <code>&lt;Controller&gt;</code>:
+      </p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular ControlValueAccessor (20+ lines boilerplate)</h3>
+          <pre><code>@Component({
+  selector: 'app-custom-select',
+  providers: [{
+    provide: NG_VALUE_ACCESSOR,
+    useExisting: forwardRef(() => CustomSelectComponent),
+    multi: true
+  }]
+})
+export class CustomSelectComponent implements ControlValueAccessor {
+  value: any;
+  onChange = (val: any) => {};
+  onTouched = () => {};
+
+  writeValue(value: any): void { this.value = value; }
+  registerOnChange(fn: any): void { this.onChange = fn; }
+  registerOnTouched(fn: any): void { this.onTouched = fn; }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Hook Form &lt;Controller&gt; (Clean &amp; Declarative)</h3>
+          <pre><code>// Wrap ANY custom component or 3rd-party UI library (e.g. react-select):
+// npm install react-select
+import { Controller } from 'react-hook-form';
+import Select from 'react-select';
+
+&lt;Controller
+  name="role"
+  control={control}
+  render={({ field, fieldState: { error } }) =&gt; (
+    &lt;&gt;
+      &lt;Select
+        {...field}
+        options={[
+          { value: 'admin', label: 'Administrator' },
+          { value: 'member', label: 'Member' }
+        ]}
+      /&gt;
+      {error &amp;&amp; &lt;span className="error"&gt;{error.message}&lt;/span&gt;}
+    &lt;/&gt;
+  )}
+/&gt;</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Side-by-Side Code Comparison: Enterprise User Registration Form</h2>
+      <p>Compare how a complete registration form with email validation, password confirmation, custom error feedback,
+        and async submission loading states is implemented in Angular vs React:</p>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Component (TypeScript + ReactiveFormsModule)</h3>
+          <pre><code>// register.component.ts
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
+
+function passwordMatchValidator(g: AbstractControl) {
+  return g.get('password')?.value === g.get('confirmPassword')?.value
+    ? null : { mismatch: true };
+}
+
+@Component({
+  selector: 'app-register',
+  templateUrl: './register.component.html'
+})
+export class RegisterComponent implements OnInit {
+  registerForm!: FormGroup;
+  isSubmitting = false;
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.registerForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: passwordMatchValidator });
+  }
+
+  async onSubmit(): Promise&lt;void&gt; {
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+    this.isSubmitting = true;
+    try {
+      await apiRegister(this.registerForm.value);
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Component (TSX + React Hook Form &amp; Zod)</h3>
+          <pre><code>// RegisterForm.tsx
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword']
+});
+
+type RegisterFormValues = z.infer&lt;typeof registerSchema&gt;;
+
+export function RegisterForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm&lt;RegisterFormValues&gt;({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { email: '', password: '', confirmPassword: '' }
+  });
+
+  async function onSubmit(data: RegisterFormValues) {
+    await apiRegister(data);
+  }
+
+  return (
+    &lt;form onSubmit={handleSubmit(onSubmit)} className="form-card"&gt;
+      &lt;div className="form-group"&gt;
+        &lt;label htmlFor="email"&gt;Email Address&lt;/label&gt;
+        &lt;input
+          id="email"
+          type="email"
+          {...register('email')}
+          aria-invalid={errors.email ? 'true' : 'false'}
+        /&gt;
+        {errors.email &amp;&amp; &lt;span className="error"&gt;{errors.email.message}&lt;/span&gt;}
+      &lt;/div&gt;
+
+      &lt;div className="form-group"&gt;
+        &lt;label htmlFor="password"&gt;Password&lt;/label&gt;
+        &lt;input id="password" type="password" {...register('password')} /&gt;
+        {errors.password &amp;&amp; &lt;span className="error"&gt;{errors.password.message}&lt;/span&gt;}
+      &lt;/div&gt;
+
+      &lt;div className="form-group"&gt;
+        &lt;label htmlFor="confirmPassword"&gt;Confirm Password&lt;/label&gt;
+        &lt;input id="confirmPassword" type="password" {...register('confirmPassword')} /&gt;
+        {errors.confirmPassword &amp;&amp; (
+          &lt;span className="error"&gt;{errors.confirmPassword.message}&lt;/span&gt;
+        )}
+      &lt;/div&gt;
+
+      &lt;button type="submit" disabled={isSubmitting}&gt;
+        {isSubmitting ? 'Creating Account...' : 'Register'}
+      &lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Critical Forms Gotchas for Angular Leads</h2>
+      <div class="callout warning">
+        <ol>
+          <li>
+            <strong>Always Spread <code>{...register('name')}</code></strong>:
+            <br>
+            In Angular, <code>formControlName="email"</code> wires up everything through directives. In React Hook Form,
+            <code>register()</code> returns an object with <code>{ name, ref, onChange, onBlur }</code>. You must spread
+            it (<code>{...register('name')}</code>) onto the input element for it to register properly.
+          </li>
+          <li>
+            <strong>Form Resetting with Defaults</strong>:
+            <br>
+            Calling <code>reset()</code> in React Hook Form resets form values back to the <code>defaultValues</code>
+            specified in <code>useForm</code>. To reset to new asynchronous server data, pass the data into reset:
+            <code>reset(fetchedUser)</code>.
+          </li>
+          <li>
+            <strong>Dynamic Fields with <code>useFieldArray</code></strong>:
+            <br>
+            When iterating over <code>fields</code> from <code>useFieldArray</code>, always use
+            <code>key={field.id}</code> (provided by RHF) rather than the array index so additions and removals preserve
+            focus and state correctly.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>7. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react-hook-form" target="_blank" rel="noopener"><strong>react-hook-form (npm)</strong></a> &bull; <a href="https://react-hook-form.com/get-started" target="_blank" rel="noopener">Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/zod" target="_blank" rel="noopener"><strong>zod (npm)</strong></a> &bull; <a href="https://zod.dev" target="_blank" rel="noopener">Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/@hookform/resolvers" target="_blank" rel="noopener"><strong>@hookform/resolvers (npm)</strong></a> &bull; <a href="https://github.com/react-hook-form/resolvers" target="_blank" rel="noopener">GitHub Repository</a></li>
+        <li><a href="https://www.npmjs.com/package/react-select" target="_blank" rel="noopener"><strong>react-select (npm)</strong></a> &bull; <a href="https://react-select.com/home" target="_blank" rel="noopener">Official Documentation</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a
+        href="./0004-state-management-signals-vs-use-state.html">&larr; Previous: Lesson 0004</a> &bull; <a
+        href="./0006-angular-services-di-vs-context-custom-hooks.html">Next: Lesson 0006 &rarr;</a></p>
+  </footer>
+</body>
+
+</html>

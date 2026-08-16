@@ -5,6 +5,7 @@
 - **Lesson Formatting Conventions**:
   - Always use the 3-column translation matrix table: `Concept | Angular (Web) | React (Web)`.
   - Focus on direct conceptual/skill translation between Angular and React.
+  - Whenever an npm package or external tool is introduced, provide a direct clickable link to its npm page (`https://www.npmjs.com/package/...`) in both the section text/spotlight and the final `Official Documentation References & NPM Packages` section.
 - **Key Analogies & Bridges**:
   - `@Input()` -> Component `props`
   - `@Output() EventEmitter` -> Callback props (`onAction={handleAction}`)
