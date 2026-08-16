@@ -45,3 +45,7 @@ Rather than starting from zero with basic HTML/JS programming concepts, this cou
 | **Forms** | `ReactiveFormsModule` (`FormGroup`) | React Hook Form (`useForm`) + Zod |
 | **HTTP Fetching** | `HttpClient` + RxJS | `fetch` + TanStack React Query |
 | **Change Detection** | Zone.js / Signal dirty checking | Virtual DOM Reconciliation + `React.memo` |
+| **Component Styling** | `ViewEncapsulation` & SCSS | Tailwind CSS + CSS Modules (`.module.css`) + CVA |
+| **Global State** | NgRx Store (Actions, Reducers, Effects) | Zustand atomic stores / Redux Toolkit |
+| **SSR & Hydration** | Angular Universal / `provideClientHydration` | Next.js App Router & React Server Components (RSC) |
+| **Component Testing** | `TestBed` & `By.css` | Vitest + React Testing Library (`userEvent`, `getByRole`) |

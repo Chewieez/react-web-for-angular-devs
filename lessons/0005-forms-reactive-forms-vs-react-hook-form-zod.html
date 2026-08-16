@@ -11,7 +11,7 @@
 <body>
   <header>
     <nav class="lesson-nav">
-      <a href="../index.html" class="nav-home">&larr; Course Homepage</a>
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
       <div class="nav-arrows">
         <a href="./0004-state-management-signals-vs-use-state.html" class="nav-prev">&larr; Previous</a>
         <a href="./0006-angular-services-di-vs-context-custom-hooks.html" class="nav-next">Next &rarr;</a>
@@ -360,6 +360,11 @@ export function RegisterForm() {
             <code>key={field.id}</code> (provided by RHF) rather than the array index so additions and removals preserve
             focus and state correctly.
           </li>
+          <li>
+            <strong>React 19 Form Actions vs. React Hook Form</strong>:
+            <br>
+            React 19 introduces native form handling via <code>&lt;form action={serverAction}&gt;</code> and the <code>useActionState</code> hook for Server Actions (in Next.js). For simple server-first forms, native actions are great; however, for rich client-side interactive forms, dynamic validation schemas, and real-time field arrays, <strong>React Hook Form + Zod</strong> remains the industry standard.
+          </li>
         </ol>
       </div>
     </section>
@@ -376,9 +381,7 @@ export function RegisterForm() {
   </main>
 
   <footer>
-    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Homepage</a> &bull; <a
-        href="./0004-state-management-signals-vs-use-state.html">&larr; Previous: Lesson 0004</a> &bull; <a
-        href="./0006-angular-services-di-vs-context-custom-hooks.html">Next: Lesson 0006 &rarr;</a></p>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0004-state-management-signals-vs-use-state.html">&larr; Previous</a> &bull; <a href="./0006-angular-services-di-vs-context-custom-hooks.html">Next &rarr;</a></p>
   </footer>
 </body>
 
