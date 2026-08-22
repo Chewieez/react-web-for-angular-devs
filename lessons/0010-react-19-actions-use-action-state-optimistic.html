@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0010: React 19 Actions, Form State & Optimistic UI</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+        <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
+      <div class="nav-arrows">
+        <a href="./0009-forms-reactive-forms-vs-react-hook-form-zod.html" class="nav-prev">&larr; Previous</a>
+        <a href="./0011-http-data-pipelines-rxjs-vs-tanstack-query.html" class="nav-next">Next &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0010: React 19 Actions, Form State &amp; Optimistic UI</h1>
+    <div class="subtitle">Translating Angular Form Submissions and async state tracking to React 19 useActionState, useOptimistic, useFormStatus, and Server Actions</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Actions &amp; Async Form Handling Translation Matrix</h2>
+      <p>In Angular, form submissions are typically handled by attaching <code>(ngSubmit)="onSubmit()"</code> to an Angular <code>FormGroup</code> or template form, manually managing <code>isSubmitting = true</code> booleans, tracking error state, and manually rolling back state if an HTTP Observable fails. In React 19, <strong>Actions</strong> are first-class primitives: functions that receive form data or payloads, execute asynchronously within transitions, automatically manage <code>isPending</code> states, and enable declarative optimistic updates with automatic rollback on rejection.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React 19 (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Form Submission Handler</strong></td>
+            <td><code>&lt;form [formGroup]="form" (ngSubmit)="onSubmit()"&gt;</code></td>
+            <td><code>&lt;form action={formAction}&gt;</code><br><em>(Native Action integration with automatic FormData passing)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Async Action State Management</strong></td>
+            <td>Manual flags on component class:<br><code>this.isLoading = true;</code><br><code>this.error = null;</code></td>
+            <td><code>const [state, formAction, isPending] = useActionState(asyncAction, initialState);</code></td>
+          </tr>
+          <tr>
+            <td><strong>Pending / Loading State in Nested Children</strong></td>
+            <td>Passing <code>[disabled]="isLoading"</code> down component tree or reading shared service state</td>
+            <td><code>const { pending } = useFormStatus();</code><br><em>(Reads parent form status without prop drilling)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Optimistic UI Updates</strong></td>
+            <td>Manually mutating local array, caching original snapshot, and restoring in <code>catchError()</code></td>
+            <td><code>const [optimisticState, setOptimistic] = useOptimistic(state, updateFn);</code><br><em>(Automatically rolls back if action throws)</em></td>
+          </tr>
+          <tr>
+            <td><strong>Form Reset on Success</strong></td>
+            <td><code>this.form.reset();</code> inside Observable <code>next</code> callback</td>
+            <td>Uncontrolled form auto-resets when action succeeds, or controlled state cleared in action return</td>
+          </tr>
+          <tr>
+            <td><strong>Server-Side Actions</strong></td>
+            <td>Custom backend API endpoint + <code>HttpClient.post()</code></td>
+            <td><code>'use server'</code> async functions passed directly to <code>&lt;form action={...}&gt;</code> or custom hooks</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 React 19 Core Action APIs</strong>
+        <p>React 19 ships native support for actions in the core <a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong><code>react</code></strong></a> and <a href="https://www.npmjs.com/package/react-dom" target="_blank" rel="noopener"><strong><code>react-dom</code></strong></a> packages:</p>
+        <pre><code>import { useActionState, useOptimistic } from 'react';
+import { useFormStatus } from 'react-dom';</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong><code>useActionState</code></strong></a>: Replaces manual async lifecycle management with a state-returning action hook.</li>
+          <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong><code>useOptimistic</code></strong></a>: Renders provisional UI immediately while an async transition is inflight.</li>
+          <li><a href="https://www.npmjs.com/package/react-dom" target="_blank" rel="noopener"><strong><code>useFormStatus</code></strong></a>: Context hook giving child components (like Submit buttons) access to the parent form's submission status.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Declarative Optimistic UI vs. Manual Rollbacks</h2>
+      <p>Angular developers often write imperative rollback logic inside RxJS pipelines:</p>
+
+      <div class="callout warning">
+        <strong>Angular Imperative Rollback Pattern:</strong>
+        <pre><code>// Imperative snapshot & rollback in Angular
+addComment(text: string) {
+  const previousComments = [...this.comments()];
+  this.comments.update(list => [...list, { id: 'temp', text, pending: true }]);
+
+  this.commentService.create(text).pipe(
+    catchError(err => {
+      // Manual error handling and state restoration
+      this.comments.set(previousComments);
+      this.errorMessage = 'Failed to post comment';
+      return EMPTY;
+    })
+  ).subscribe(newComment => {
+    this.comments.update(list => list.map(c => c.id === 'temp' ? newComment : c));
+  });
+}</code></pre>
+      </div>
+
+      <p>In React 19, <code>useOptimistic</code> couples directly to the React transition lifecycle. When an action starts, <code>setOptimistic(payload)</code> applies immediately. If the action succeeds or fails, React automatically discards the optimistic layer and re-renders with the confirmed authoritative state from <code>useActionState</code>.</p>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Comment Submission with Optimistic UI</h2>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular 17+ Signals &amp; RxJS</h3>
+          <pre><code>// comment-thread.component.ts
+import { Component, signal } from '@angular/core';
+import { CommentService, Comment } from './comment.service';
+
+@Component({
+  selector: 'app-comment-thread',
+  template: `
+    &lt;ul&gt;
+      @for (comment of comments(); track comment.id) {
+        &lt;li [class.opacity-50]="comment.isPending"&gt;
+          {{ comment.text }}
+          @if (comment.isPending) { &lt;span&gt;(Sending...)&lt;/span&gt; }
+        &lt;/li&gt;
+      }
+    &lt;/ul&gt;
+    &lt;form (ngSubmit)="submitComment(commentInput.value); commentInput.value = ''"&gt;
+      &lt;input #commentInput required /&gt;
+      &lt;button type="submit" [disabled]="isSubmitting()"&gt;Send&lt;/button&gt;
+    &lt;/form&gt;
+  `
+})
+export class CommentThreadComponent {
+  comments = signal&lt;Comment[]&gt;([]);
+  isSubmitting = signal(false);
+
+  constructor(private commentService: CommentService) {}
+
+  submitComment(text: string) {
+    if (!text.trim()) return;
+    const tempComment: Comment = { id: Date.now().toString(), text, isPending: true };
+    const original = this.comments();
+    
+    this.comments.update(c => [...c, tempComment]);
+    this.isSubmitting.set(true);
+
+    this.commentService.add(text).subscribe({
+      next: (saved) => {
+        this.comments.update(c => c.map(item => item.id === tempComment.id ? saved : item));
+        this.isSubmitting.set(false);
+      },
+      error: () => {
+        this.comments.set(original); // rollback
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React 19 Actions + useOptimistic</h3>
+          <pre><code>// CommentThread.tsx
+import { useActionState, useOptimistic } from 'react';
+import { useFormStatus } from 'react-dom';
+import { addCommentApi, type Comment } from './commentApi';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    &lt;button type="submit" disabled={pending}&gt;
+      {pending ? 'Sending...' : 'Send'}
+    &lt;/button&gt;
+  );
+}
+
+export function CommentThread({ initialComments }: { initialComments: Comment[] }) {
+  const [comments, formAction] = useActionState(
+    async (prevComments: Comment[], formData: FormData) => {
+      const text = formData.get('comment') as string;
+      if (!text) return prevComments;
+      
+      // Call async API or Server Action
+      const savedComment = await addCommentApi(text);
+      return [...prevComments, savedComment];
+    },
+    initialComments
+  );
+
+  const [optimisticComments, addOptimisticComment] = useOptimistic(
+    comments,
+    (state, newText: string) => [
+      ...state,
+      { id: 'temp-' + Date.now(), text: newText, isPending: true }
+    ]
+  );
+
+  return (
+    &lt;div&gt;
+      &lt;ul&gt;
+        {optimisticComments.map((comment) => (
+          &lt;li key={comment.id} style={{ opacity: comment.isPending ? 0.5 : 1 }}&gt;
+            {comment.text}
+            {comment.isPending && &lt;span&gt; (Sending...)&lt;/span&gt;}
+          &lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+
+      &lt;form
+        action={async (formData: FormData) => {
+          const text = formData.get('comment') as string;
+          addOptimisticComment(text);
+          await formAction(formData);
+        }}
+      &gt;
+        &lt;input name="comment" required placeholder="Write a comment..." /&gt;
+        &lt;SubmitButton /&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>No Synthetic Event Juggling</strong>: React 19 Actions automatically read native standard <code>FormData</code> objects directly from <code>&lt;form action={...}&gt;</code>, making forms progressively enhanceable.</li>
+          <li><strong>Decoupled Submit Buttons with <code>useFormStatus</code></strong>: In Angular, submit buttons frequently require <code>@Input() isLoading: boolean</code> passed from container components. <code>useFormStatus</code> lets UI buttons observe form pending state via internal context without prop drilling.</li>
+          <li><strong>Transitions Handle Pending State</strong>: Because <code>useActionState</code> wraps invocations in React Transitions, slow server updates don't block user clicks or typing in other parts of the application.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev/reference/react/useActionState" target="_blank" rel="noopener">React useActionState Official Reference</a></li>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev/reference/react/useOptimistic" target="_blank" rel="noopener">React useOptimistic Official Reference</a></li>
+        <li><a href="https://www.npmjs.com/package/react-dom" target="_blank" rel="noopener"><strong>react-dom (npm)</strong></a> &bull; <a href="https://react.dev/reference/react-dom/hooks/useFormStatus" target="_blank" rel="noopener">React useFormStatus Documentation</a></li>
+      </ul>
+    </section>
+  </main>
+
+    <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0009-forms-reactive-forms-vs-react-hook-form-zod.html">&larr; Previous</a> &bull; <a href="./0011-http-data-pipelines-rxjs-vs-tanstack-query.html">Next &rarr;</a></p>
+  </footer>
+</body>
+</html>

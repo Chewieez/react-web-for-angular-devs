@@ -1,4 +1,4 @@
-# Learning Record 0004: State Management Fundamentals (Signals vs. useState & useMemo)
+# Learning Record 0006: State Management Fundamentals (Signals vs. useState & useMemo)
 
 ## Date: 2026-08-15
 

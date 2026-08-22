@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0019: Enterprise Monorepos & Workspace Tooling</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+        <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
+      <div class="nav-arrows">
+        <a href="./0018-browser-testing-chrome-devtools-mcp-msw.html" class="nav-prev">&larr; Previous</a>
+        <a href="./0020-microfrontends-module-federation.html" class="nav-next">Next &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0019: Enterprise Monorepos &amp; Workspace Tooling</h1>
+    <div class="subtitle">Translating Angular CLI Multi-Project Workspaces &amp; Libraries to Turborepo, Nx, and Shared TypeScript Workspaces</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Monorepo Architecture Translation Matrix</h2>
+      <p>Enterprise Angular teams are well-versed in monorepos via <code>angular.json</code> multi-project configurations and <code>ng generate library</code>. In the React ecosystem, monorepo architectures rely on package manager workspaces (pnpm / npm / yarn) orchestrated by high-performance task runners like <a href="https://www.npmjs.com/package/turbo" target="_blank" rel="noopener"><strong>Turborepo</strong></a> or <a href="https://www.npmjs.com/package/nx" target="_blank" rel="noopener"><strong>Nx</strong></a> with remote computation caching.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular Monorepo (CLI / Nx)</th>
+            <th>React Enterprise Monorepo (Turborepo / Nx)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Workspace Manifest &amp; Task Pipeline</strong></td>
+            <td><code>angular.json</code> / <code>nx.json</code> targets (<code>build</code>, <code>serve</code>, <code>test</code>)</td>
+            <td><a href="https://www.npmjs.com/package/turbo" target="_blank" rel="noopener"><strong><code>turbo.json</code></strong></a> pipeline task graphs with dependency declarations (<code>dependsOn: ["^build"]</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>Creating Shared UI / Logic Libraries</strong></td>
+            <td><code>ng g library @my-org/ui-components</code><br><em>(Configures <code>tsconfig.json</code> paths and secondary entry points)</em></td>
+            <td>Internal Workspace Packages (<code>packages/ui</code>, <code>packages/utils</code>) with modern <code>exports</code> maps in <code>package.json</code></td>
+          </tr>
+          <tr>
+            <td><strong>Module Resolution &amp; Types</strong></td>
+            <td><code>tsconfig.base.json</code> path mappings pointing to <code>dist/</code> or source index files</td>
+            <td>TypeScript Project References (<code>tsconfig.json</code> <code>references: [{ path: '../ui' }]</code>) or pnpm workspace protocols (<code>"workspace:*"</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>Computation &amp; Build Caching</strong></td>
+            <td>Nx Cloud / Angular CLI cache (<code>.angular/cache</code>)</td>
+            <td>Turborepo / Nx local and remote cache hashing inputs (files, environment variables) to reuse identical builds in CI/CD</td>
+          </tr>
+          <tr>
+            <td><strong>Code Scaffolding Generators</strong></td>
+            <td>Angular Schematics (<code>ng generate ...</code>)</td>
+            <td>Turborepo Generators (<code>turbo gen</code>) or Plop.js</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Monorepo Tooling Packages</strong>
+        <p>The standard modern monorepo orchestration tools in the React ecosystem:</p>
+        <pre><code>npm install -D turbo</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/turbo" target="_blank" rel="noopener"><strong><code>turbo</code></strong></a>: High-performance Rust-based build system for TypeScript monorepos.</li>
+          <li><a href="https://www.npmjs.com/package/nx" target="_blank" rel="noopener"><strong><code>nx</code></strong></a>: Smart, extensible build framework with project graph visualization and deep workspace automation.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Workspace Dependency Pipelines &amp; TypeScript Pathing</h2>
+      <p>In a React monorepo, applications (e.g. Next.js apps, Vite SPAs) consume shared packages (e.g. <code>@repo/ui</code>, <code>@repo/types</code>) directly as internal workspace dependencies without requiring manual npm publish steps.</p>
+
+      <div class="callout tip">
+        <strong>Turborepo Task Pipeline Definition (<code>turbo.json</code>):</strong>
+        <pre><code>{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Consuming a Shared UI Library</h2>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Library Consumption</h3>
+          <pre><code>// tsconfig.base.json
+{
+  "compilerOptions": {
+    "paths": {
+      "@my-org/ui": ["projects/ui/src/public-api.ts"]
+    }
+  }
+}
+
+// app.module.ts or standalone component
+import { Component } from '@angular/core';
+import { ButtonComponent } from '@my-org/ui';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ButtonComponent],
+  template: `&lt;lib-button label="Submit" /&gt;`
+})
+export class AppComponent {}</code></pre>
+        </div>
+
+        <div>
+          <h3>React Turborepo Package Consumption</h3>
+          <pre><code>// packages/ui/package.json
+{
+  "name": "@repo/ui",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "react": "^19.0.0"
+  }
+}
+
+// apps/web/src/app/page.tsx
+import { Button } from "@repo/ui/button";
+
+export default function HomePage() {
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;Enterprise Web Portal&lt;/h1&gt;
+      &lt;Button variant="primary"&gt;Get Started&lt;/Button&gt;
+    &lt;/main&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>No Pre-Compiling Internal Packages</strong>: With modern React bundlers (Next.js, Vite with tsconfig paths), internal UI packages can export raw <code>.tsx</code> source code directly. The consuming application compiles it on demand, eliminating slow library build steps during local dev.</li>
+          <li><strong>Cache Invalidation with <code>^build</code></strong>: The caret symbol in <code>dependsOn: ["^build"]</code> instructs Turborepo to build all upstream library dependencies of a project before building the project itself, fully parallelized across CPU cores.</li>
+          <li><strong>Zero-Config Remote Caching</strong>: Running <code>npx turbo login</code> and <code>npx turbo link</code> shares build caches across team members and CI pipelines, reducing CI build times from minutes to seconds.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/turbo" target="_blank" rel="noopener"><strong>turbo (npm)</strong></a> &bull; <a href="https://turbo.build/repo/docs" target="_blank" rel="noopener">Turborepo Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/nx" target="_blank" rel="noopener"><strong>nx (npm)</strong></a> &bull; <a href="https://nx.dev" target="_blank" rel="noopener">Nx Official Documentation</a></li>
+        <li><a href="https://pnpm.io/workspaces" target="_blank" rel="noopener"><strong>pnpm Workspaces</strong></a> &bull; <a href="https://pnpm.io/workspaces" target="_blank" rel="noopener">pnpm Workspace Protocol Reference</a></li>
+      </ul>
+    </section>
+  </main>
+
+    <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0018-browser-testing-chrome-devtools-mcp-msw.html">&larr; Previous</a> &bull; <a href="./0020-microfrontends-module-federation.html">Next &rarr;</a></p>
+  </footer>
+</body>
+</html>

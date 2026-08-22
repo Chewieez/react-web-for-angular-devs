@@ -1,4 +1,4 @@
-# Learning Record 0006: Angular Services & DI vs. React Context & Custom Hooks
+# Learning Record 0008: Angular Services & DI vs. React Context & Custom Hooks
 
 ## Date: 2026-08-16
 

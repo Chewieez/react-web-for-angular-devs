@@ -17,3 +17,6 @@
   - `HttpClient` + RxJS -> `fetch` / TanStack Query
   - Angular Universal / SSR -> Next.js App Router & React Server Components (RSC)
   - `TestBed` -> Vitest + React Testing Library
+  - Angular E2E / Protractor -> Chrome DevTools MCP & AI-driven browser verification loops + MSW (Mock Service Worker)
+- **Tooling Preferences**:
+  - Prefers Chrome DevTools MCP & AI agent browser automation / auditing (DOM snapshots, accessibility tree inspection, console/network auditing) over standalone Playwright scripts.

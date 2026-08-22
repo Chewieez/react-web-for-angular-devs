@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0020: Microfrontends & Module Federation</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+        <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
+      <div class="nav-arrows">
+        <a href="./0019-monorepos-workspace-tooling-turborepo-nx.html" class="nav-prev">&larr; Previous</a>
+      </div>
+    </nav>
+    <h1>Lesson 0020: Microfrontends &amp; Module Federation</h1>
+    <div class="subtitle">Translating Angular Module Federation (@angular-architects/module-federation) to Modern React Module Federation 2.0 and Dynamic Remotes</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Microfrontend Architecture Translation Matrix</h2>
+      <p>Enterprise Angular architectures frequently deploy microfrontends using Manfred Steyer's <code>@angular-architects/module-federation</code> to dynamically mount remote Angular feature modules or Web Components. In the React ecosystem, microfrontends are powered by <strong>Module Federation 2.0</strong> (<a href="https://www.npmjs.com/package/@module-federation/enhanced" target="_blank" rel="noopener"><strong><code>@module-federation/enhanced</code></strong></a>, Rsbuild, and Webpack), enabling independently deployed remote React applications to share dependencies (like <code>react</code>, <code>react-dom</code>, and <code>@tanstack/react-query</code>) as runtime singletons without duplicate downloads.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular Microfrontends</th>
+            <th>React Microfrontends (Module Federation 2.0)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Federation Plugin</strong></td>
+            <td><code>@angular-architects/module-federation</code> with <code>withModuleFederationPlugin()</code></td>
+            <td><a href="https://www.npmjs.com/package/@module-federation/enhanced" target="_blank" rel="noopener"><strong><code>@module-federation/enhanced</code></strong></a> or <code>@originjs/vite-plugin-federation</code></td>
+          </tr>
+          <tr>
+            <td><strong>Host / Shell App Configuration</strong></td>
+            <td>Declaring <code>remotes</code> in <code>federation.config.js</code></td>
+            <td><code>new ModuleFederationPlugin({ name: 'host', remotes: { checkout: 'checkout@https://...' } })</code></td>
+          </tr>
+          <tr>
+            <td><strong>Shared Singleton Runtime</strong></td>
+            <td><code>shareAll({ singleton: true, strictVersion: true })</code></td>
+            <td><code>shared: { react: { singleton: true, requiredVersion: '^19.0.0' }, 'react-dom': { singleton: true } }</code></td>
+          </tr>
+          <tr>
+            <td><strong>Dynamic Remote Loading</strong></td>
+            <td><code>loadRemoteModule({ type: 'module', remoteEntry: '...', exposedModule: './Module' })</code></td>
+            <td><code>React.lazy(() =&gt; import('checkout/Cart'))</code> or runtime <code>loadRemote('checkout/Cart')</code></td>
+          </tr>
+          <tr>
+            <td><strong>Remote Fault Isolation</strong></td>
+            <td>Angular ErrorHandler / Router error catches</td>
+            <td>React <strong>Error Boundaries</strong> (<code>&lt;ErrorBoundary fallback={&lt;RemoteFallback /&gt;}&gt;</code>) wrapping dynamic remotes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Module Federation 2.0 Packages</strong>
+        <p>Install the next-generation federation plugin:</p>
+        <pre><code>npm install -D @module-federation/enhanced</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/@module-federation/enhanced" target="_blank" rel="noopener"><strong><code>@module-federation/enhanced</code></strong></a>: Official cross-bundler federation suite with type-hint generation and dynamic runtime plugins.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Shared Singleton Runtimes and Error Boundaries</h2>
+      <p>The most critical requirement in React microfrontends is ensuring that <strong>only one instance of <code>react</code> and <code>react-dom</code> executes in the browser memory</strong>. Multiple React instances break hook state dispatchers. Module Federation solves this via the <code>singleton: true</code> configuration:</p>
+
+      <div class="callout warning">
+        <strong>Critical React Rule for Microfrontends:</strong>
+        <p>Always configure <code>react</code> and <code>react-dom</code> as <code>singleton: true</code> and <code>strictVersion: true</code> in both Host and Remote configurations. If versions drift across minor breaking changes, federation runtime negotiates or logs a clear version mismatch warning.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Consuming a Remote Feature in the Host App</h2>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Route Loading Remote Module</h3>
+          <pre><code>// app.routes.ts (Angular Host)
+import { Routes } from '@angular/router';
+import { loadRemoteModule } from '@angular-architects/module-federation';
+
+export const routes: Routes = [
+  {
+    path: 'checkout',
+    loadChildren: () =>
+      loadRemoteModule({
+        type: 'module',
+        remoteEntry: 'https://checkout.domain.com/remoteEntry.js',
+        exposedModule: './CheckoutModule'
+      }).then(m => m.CheckoutModule)
+  }
+];</code></pre>
+        </div>
+
+        <div>
+          <h3>React Host App with Lazy Remote &amp; Error Boundary</h3>
+          <pre><code>// HostApp.tsx (React Host)
+import React, { Suspense } from 'react';
+import { ErrorBoundary } from './ErrorBoundary';
+
+// Dynamically imported remote exposed component
+const RemoteCheckout = React.lazy(() => import('checkoutApp/CheckoutFlow'));
+
+export function App() {
+  return (
+    &lt;div className="host-container"&gt;
+      &lt;nav&gt;Host Navigation Bar&lt;/nav&gt;
+      
+      &lt;main&gt;
+        &lt;ErrorBoundary fallback={&lt;p&gt;Checkout service temporarily unavailable.&lt;/p&gt;}&gt;
+          &lt;Suspense fallback={&lt;div&gt;Loading Checkout...&lt;/div&gt;}&gt;
+            &lt;RemoteCheckout userToken="token-123" /&gt;
+          &lt;/Suspense&gt;
+        &lt;/ErrorBoundary&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>Zero Glue Code for Props</strong>: Unlike Angular where remotes often require custom event bridges or Web Component wrapping to communicate with the host, React remotes receive standard React props, callbacks, and context seamlessly across boundaries.</li>
+          <li><strong>Resilient Microfrontends via Error Boundaries</strong>: If a remote server experiences an outage or throws a runtime error, React's <code>&lt;ErrorBoundary&gt;</code> isolates the crash to that specific widget without bringing down the host shell application.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/@module-federation/enhanced" target="_blank" rel="noopener"><strong>@module-federation/enhanced (npm)</strong></a> &bull; <a href="https://module-federation.io" target="_blank" rel="noopener">Module Federation Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/react" target="_blank" rel="noopener"><strong>react (npm)</strong></a> &bull; <a href="https://react.dev/reference/react/lazy" target="_blank" rel="noopener">React.lazy Official Reference</a></li>
+      </ul>
+    </section>
+  </main>
+
+    <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0019-monorepos-workspace-tooling-turborepo-nx.html">&larr; Previous</a> &bull; <strong>🎉 Curriculum Complete!</strong></p>
+  </footer>
+</body>
+</html>

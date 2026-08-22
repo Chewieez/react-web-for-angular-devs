@@ -1,4 +1,4 @@
-# Learning Record 0014: Component & Integration Testing (TestBed vs. Vitest & RTL)
+# Learning Record 0017: Component & Integration Testing (TestBed vs. Vitest & RTL)
 
 ## Date: 2026-08-16
 

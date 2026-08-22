@@ -1,4 +1,4 @@
-# Learning Record 0013: Server-Side Rendering (SSR) & React Server Components (RSC)
+# Learning Record 0015: Server-Side Rendering (SSR) & React Server Components (RSC)
 
 ## Date: 2026-08-16
 

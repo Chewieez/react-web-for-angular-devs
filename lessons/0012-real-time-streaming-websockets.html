@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0012: Real-Time Data Pipelines & WebSockets</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+        <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
+      <div class="nav-arrows">
+        <a href="./0011-http-data-pipelines-rxjs-vs-tanstack-query.html" class="nav-prev">&larr; Previous</a>
+        <a href="./0013-complex-global-state-ngrx-vs-zustand-rtk.html" class="nav-next">Next &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0012: Real-Time Data Pipelines &amp; WebSockets</h1>
+    <div class="subtitle">Translating Angular RxJS WebSocketSubject &amp; SSE streams to React custom streaming hooks and resilient real-time state</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Real-Time Streaming Translation Matrix</h2>
+      <p>In Angular, real-time architectures utilize RxJS's <code>webSocket()</code> (<code>WebSocketSubject</code>) piped into Angular templates via the <code>| async</code> pipe. In React, real-time streaming is built using <strong>composable custom hooks</strong> (such as <a href="https://www.npmjs.com/package/react-use-websocket" target="_blank" rel="noopener"><strong><code>react-use-websocket</code></strong></a> or custom <code>useWebSocket</code> / <code>useEventSource</code> hooks) with explicit connection lifecycles, exponential backoff reconnects, and integration with TanStack Query or local state.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>WebSocket Primitive</strong></td>
+            <td><code>webSocket&lt;T&gt;('wss://...')</code> (<code>WebSocketSubject</code>)</td>
+            <td>Native <code>WebSocket</code> inside <code>useEffect</code> / <a href="https://www.npmjs.com/package/react-use-websocket" target="_blank" rel="noopener"><strong><code>react-use-websocket</code></strong></a> hook</td>
+          </tr>
+          <tr>
+            <td><strong>Server-Sent Events (SSE)</strong></td>
+            <td>Wrapping <code>EventSource</code> in an RxJS <code>Observable.create()</code></td>
+            <td>Custom <code>useEventSource(url)</code> hook or Fetch Streaming with <code>ReadableStreamDefaultReader</code></td>
+          </tr>
+          <tr>
+            <td><strong>Automatic Reconnection</strong></td>
+            <td><code>pipe(retry({ delay: ... }))</code> RxJS operator</td>
+            <td>Exponential backoff timeout inside hook cleanup/reconnect loops or built into <code>react-use-websocket</code></td>
+          </tr>
+          <tr>
+            <td><strong>Piping Stream into UI</strong></td>
+            <td><code>messages$ | async</code> in Angular template</td>
+            <td><code>const { lastJsonMessage, sendJsonMessage } = useWebSocket(url);</code></td>
+          </tr>
+          <tr>
+            <td><strong>Cache Invalidation on Event</strong></td>
+            <td>RxJS Subject triggers service reload</td>
+            <td>WebSocket event invokes <code>queryClient.setQueryData()</code> or <code>queryClient.invalidateQueries()</code> in TanStack Query</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 Real-Time Streaming Packages</strong>
+        <p>Recommended real-time hooks and client libraries in React:</p>
+        <pre><code>npm install react-use-websocket socket.io-client</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/react-use-websocket" target="_blank" rel="noopener"><strong><code>react-use-websocket</code></strong></a>: Robust, battle-tested hook for native WebSocket management with automatic heartbeats, reconnects, and message filtering.</li>
+          <li><a href="https://www.npmjs.com/package/socket.io-client" target="_blank" rel="noopener"><strong><code>socket.io-client</code></strong></a>: Client for Socket.IO event-driven bidirectional architectures.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Feeding Real-Time Streams into TanStack Query Cache</h2>
+      <p>A premier architectural pattern in modern React apps is using WebSockets not as the primary data fetcher, but as a <strong>live invalidation and delta stream</strong> that updates the TanStack Query cache in place:</p>
+
+      <div class="callout tip">
+        <strong>Live Cache Patching Pattern:</strong>
+        <pre><code>import { useQueryClient } from '@tanstack/react-query';
+import useWebSocket from 'react-use-websocket';
+
+export function useLiveOrderUpdates() {
+  const queryClient = useQueryClient();
+
+  useWebSocket('wss://api.domain.com/orders/feed', {
+    onMessage: (event) => {
+      const updatedOrder = JSON.parse(event.data);
+      // Immediately patch the TanStack query cache without refetching from HTTP!
+      queryClient.setQueryData(['orders'], (oldOrders: any[] = []) =>
+        oldOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o)
+      );
+    }
+  });
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Real-Time Crypto Price Ticker</h2>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular RxJS WebSocketSubject</h3>
+          <pre><code>// price-ticker.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import { Observable, retry } from 'rxjs';
+
+interface PriceUpdate {
+  symbol: string;
+  price: number;
+}
+
+@Component({
+  selector: 'app-price-ticker',
+  template: `
+    &lt;div class="ticker"&gt;
+      @if (price$ | async; as price) {
+        &lt;span&gt;{{ price.symbol }}: ${{ price.price.toFixed(2) }}&lt;/span&gt;
+      } @else {
+        &lt;span&gt;Connecting to live stream...&lt;/span&gt;
+      }
+    &lt;/div&gt;
+  `
+})
+export class PriceTickerComponent implements OnInit, OnDestroy {
+  private socket$!: WebSocketSubject&lt;PriceUpdate&gt;;
+  price$!: Observable&lt;PriceUpdate&gt;;
+
+  ngOnInit() {
+    this.socket$ = webSocket('wss://stream.crypto.com/live');
+    this.price$ = this.socket$.pipe(
+      retry({ delay: 3000 })
+    );
+  }
+
+  ngOnDestroy() {
+    this.socket$.complete();
+  }
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React useWebSocket Hook</h3>
+          <pre><code>// PriceTicker.tsx
+import React from 'react';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
+
+interface PriceUpdate {
+  symbol: string;
+  price: number;
+}
+
+export function PriceTicker() {
+  const { lastJsonMessage, readyState } = useWebSocket&lt;PriceUpdate&gt;(
+    'wss://stream.crypto.com/live',
+    {
+      shouldReconnect: () => true,
+      reconnectInterval: 3000,
+    }
+  );
+
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: 'Connecting...',
+    [ReadyState.OPEN]: 'Live',
+    [ReadyState.CLOSING]: 'Closing...',
+    [ReadyState.CLOSED]: 'Disconnected',
+    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+  }[readyState];
+
+  return (
+    &lt;div className="ticker"&gt;
+      &lt;span className="status-badge"&gt;{connectionStatus}&lt;/span&gt;
+      {lastJsonMessage ? (
+        &lt;span&gt;
+          {lastJsonMessage.symbol}: ${lastJsonMessage.price.toFixed(2)}
+        &lt;/span&gt;
+      ) : (
+        &lt;span&gt;Awaiting incoming stream data...&lt;/span&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>Automatic Connection Cleanup</strong>: React hooks automatically handle WebSocket disconnects and unsubscribe events when components unmount, mirroring <code>ngOnDestroy</code> without boilerplate teardown code.</li>
+          <li><strong>Bidirectional Messaging without Boilerplate</strong>: Functions like <code>sendJsonMessage({ type: 'SUBSCRIBE' })</code> allow child components to trigger websocket transmissions directly via callbacks.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/react-use-websocket" target="_blank" rel="noopener"><strong>react-use-websocket (npm)</strong></a> &bull; <a href="https://github.com/robtaussig/react-use-websocket" target="_blank" rel="noopener">react-use-websocket Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/@tanstack/react-query" target="_blank" rel="noopener"><strong>@tanstack/react-query (npm)</strong></a> &bull; <a href="https://tanstack.com/query/latest/docs/framework/react/community/websockets" target="_blank" rel="noopener">TanStack Query WebSockets Guide</a></li>
+      </ul>
+    </section>
+  </main>
+
+    <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0011-http-data-pipelines-rxjs-vs-tanstack-query.html">&larr; Previous</a> &bull; <a href="./0013-complex-global-state-ngrx-vs-zustand-rtk.html">Next &rarr;</a></p>
+  </footer>
+</body>
+</html>

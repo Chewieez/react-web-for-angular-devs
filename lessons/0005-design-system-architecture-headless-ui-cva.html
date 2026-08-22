@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0005: Enterprise Design Systems & Headless UI</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+        <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
+      <div class="nav-arrows">
+        <a href="./0004-css-component-styling-architecture.html" class="nav-prev">&larr; Previous</a>
+        <a href="./0006-state-management-signals-vs-use-state.html" class="nav-next">Next &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0005: Enterprise Design Systems &amp; Headless UI</h1>
+    <div class="subtitle">Translating Angular Material &amp; Angular CDK to Radix UI, shadcn/ui, class-variance-authority (CVA), and tailwind-merge</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Design System Architecture Translation Matrix</h2>
+      <p>In enterprise Angular architectures, teams either consume heavyweight opinionated UI suites (Angular Material, PrimeNG) or build custom design systems on top of the <strong>Angular Component Development Kit (CDK)</strong> (<code>@angular/cdk/overlay</code>, <code>@angular/cdk/a11y</code>, <code>@angular/cdk/dialog</code>). In modern React Web, the industry has shifted away from monolithic component packages toward <strong>Headless UI primitives</strong> (<a href="https://www.npmjs.com/package/@radix-ui/react-dialog" target="_blank" rel="noopener"><strong>Radix UI</strong></a>, React Aria) combined with type-safe variant engines (<a href="https://www.npmjs.com/package/class-variance-authority" target="_blank" rel="noopener"><strong><code>class-variance-authority</code> / CVA</strong></a>) and copy-paste component architecture (<a href="https://ui.shadcn.com" target="_blank" rel="noopener"><strong>shadcn/ui</strong></a>).</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Unstyled Accessibility Primitives</strong></td>
+            <td><code>@angular/cdk/a11y</code><br><code>@angular/cdk/overlay</code><br><code>@angular/cdk/dialog</code></td>
+            <td><a href="https://www.npmjs.com/package/@radix-ui/react-dialog" target="_blank" rel="noopener"><strong>Radix UI</strong></a> primitives (<code>@radix-ui/react-*</code>) or React Aria Primitives</td>
+          </tr>
+          <tr>
+            <td><strong>Type-Safe Component Variants</strong></td>
+            <td>SCSS mixins / BEM classes + <code>@Input() variant: 'primary' | 'outline'</code> with <code>[ngClass]</code> mappings</td>
+            <td><a href="https://www.npmjs.com/package/class-variance-authority" target="_blank" rel="noopener"><strong><code>class-variance-authority</code> (CVA)</strong></a>: Type-safe TypeScript variant &amp; compound variant schema builder</td>
+          </tr>
+          <tr>
+            <td><strong>Tailwind Class Conflict Resolution</strong></td>
+            <td>Manual string concatenation or custom Angular pipes</td>
+            <td><a href="https://www.npmjs.com/package/tailwind-merge" target="_blank" rel="noopener"><strong><code>tailwind-merge</code></strong></a> + <a href="https://www.npmjs.com/package/clsx" target="_blank" rel="noopener"><strong><code>clsx</code></strong></a> (Standard <code>cn(...)</code> utility)</td>
+          </tr>
+          <tr>
+            <td><strong>Enterprise Component Library Model</strong></td>
+            <td>Monolithic published npm package (Angular Material, PrimeNG) requiring custom SCSS overrides</td>
+            <td><strong>Own-your-code architecture (shadcn/ui)</strong>: Direct source-code component generation into your repo via CLI with 100% theme control</td>
+          </tr>
+          <tr>
+            <td><strong>Polymorphic Elements ("as" prop)</strong></td>
+            <td><code>&lt;ng-container *ngComponentOutlet="..."&gt;</code> or template refs</td>
+            <td><a href="https://www.npmjs.com/package/@radix-ui/react-slot" target="_blank" rel="noopener"><strong><code>@radix-ui/react-slot</code></strong></a> (<code>asChild</code> pattern) / Polymorphic <code>ComponentPropsWithRef&lt;T&gt;</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 The Modern Design System Stack</strong>
+        <p>Install the standard enterprise styling and variant foundation:</p>
+        <pre><code>npm install class-variance-authority clsx tailwind-merge @radix-ui/react-slot @radix-ui/react-dialog</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/class-variance-authority" target="_blank" rel="noopener"><strong><code>class-variance-authority</code></strong></a>: Schema builder for component variants (size, intent, disabled).</li>
+          <li><a href="https://www.npmjs.com/package/tailwind-merge" target="_blank" rel="noopener"><strong><code>tailwind-merge</code></strong></a>: Intelligently merges Tailwind utility classes without specificity conflicts (e.g. <code>p-4</code> correctly overrides <code>p-2</code>).</li>
+          <li><a href="https://www.npmjs.com/package/@radix-ui/react-slot" target="_blank" rel="noopener"><strong><code>@radix-ui/react-slot</code></strong></a>: Powers the <code>asChild</code> pattern, merging props and event handlers onto any child element.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: The <code>cn()</code> Utility and CVA Variant Builder</h2>
+      <p>In React design systems, every component defines its baseline styles and configurable variants using <strong>CVA</strong>, and merges consumer-provided <code>className</code> overrides using a <code>cn()</code> helper function:</p>
+
+      <div class="callout tip">
+        <strong>The Universal <code>cn()</code> Utility (lib/utils.ts):</strong>
+        <pre><code>import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Building an Enterprise Button Component</h2>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular CDK &amp; SCSS Button</h3>
+          <pre><code>// custom-button.component.ts
+import { Component, Input } from '@angular/core';
+
+export type ButtonVariant = 'primary' | 'destructive' | 'outline';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+@Component({
+  selector: 'app-button',
+  template: `
+    &lt;button
+      [type]="type"
+      [disabled]="disabled"
+      class="btn"
+      [class.btn-primary]="variant === 'primary'"
+      [class.btn-destructive]="variant === 'destructive'"
+      [class.btn-outline]="variant === 'outline'"
+      [class.btn-sm]="size === 'sm'"
+      [class.btn-md]="size === 'md'"
+      [class.btn-lg]="size === 'lg'"
+      [class]="customClass"&gt;
+      &lt;ng-content /&gt;
+    &lt;/button&gt;
+  `,
+  styleUrls: ['./custom-button.component.scss']
+})
+export class CustomButtonComponent {
+  @Input() variant: ButtonVariant = 'primary';
+  @Input() size: ButtonSize = 'md';
+  @Input() type: 'button' | 'submit' | 'reset' = 'button';
+  @Input() disabled = false;
+  @Input() customClass = '';
+}</code></pre>
+        </div>
+
+        <div>
+          <h3>React + CVA + Radix Slot (shadcn pattern)</h3>
+          <pre><code>// Button.tsx
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from './lib/utils';
+
+export const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-white hover:bg-primary/90',
+        destructive: 'bg-destructive text-white hover:bg-destructive/90',
+        outline: 'border border-input bg-background hover:bg-accent'
+      },
+      size: {
+        sm: 'h-8 px-3 text-xs',
+        md: 'h-10 px-4 text-sm',
+        lg: 'h-12 px-8 text-base'
+      }
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md'
+    }
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes&lt;HTMLButtonElement&gt;,
+    VariantProps&lt;typeof buttonVariants&gt; {
+  asChild?: boolean;
+}
+
+export const Button = React.forwardRef&lt;HTMLButtonElement, ButtonProps&gt;(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button';
+    return (
+      &lt;Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      /&gt;
+    );
+  }
+);
+Button.displayName = 'Button';</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>The <code>asChild</code> Polymorphism Pattern</strong>: In Angular, rendering a button as a link or routing trigger requires wrapper directives or separate components. In React, <code>asChild</code> delegates rendering to any child (e.g. <code>&lt;Button asChild&gt;&lt;Link href="/dashboard"&gt;Go&lt;/Link&gt;&lt;/Button&gt;</code>) without losing styles or accessibility attributes.</li>
+          <li><strong>No Monolithic CSS Lock-In</strong>: Rather than fighting global CSS specificity wars with <code>::ng-deep</code> to override Angular Material styles, headless primitives leave 100% of the DOM styling to your component.</li>
+          <li><strong>Extracting Type-Safe Variant Props</strong>: CVA's <code>VariantProps&lt;typeof buttonVariants&gt;</code> automatically generates TypeScript interfaces from your variant definitions without duplicating union types.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/class-variance-authority" target="_blank" rel="noopener"><strong>class-variance-authority (npm)</strong></a> &bull; <a href="https://cva.style/docs" target="_blank" rel="noopener">CVA Official Documentation</a></li>
+        <li><a href="https://www.npmjs.com/package/tailwind-merge" target="_blank" rel="noopener"><strong>tailwind-merge (npm)</strong></a> &bull; <a href="https://github.com/dcastil/tailwind-merge" target="_blank" rel="noopener">Tailwind Merge GitHub</a></li>
+        <li><a href="https://www.npmjs.com/package/@radix-ui/react-slot" target="_blank" rel="noopener"><strong>@radix-ui/react-slot (npm)</strong></a> &bull; <a href="https://www.radix-ui.com/primitives/docs/utilities/slot" target="_blank" rel="noopener">Radix Slot Documentation</a></li>
+        <li><a href="https://ui.shadcn.com" target="_blank" rel="noopener"><strong>shadcn/ui</strong></a> &bull; <a href="https://ui.shadcn.com/docs" target="_blank" rel="noopener">shadcn/ui Documentation &amp; Component Guides</a></li>
+      </ul>
+    </section>
+  </main>
+
+    <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0004-css-component-styling-architecture.html">&larr; Previous</a> &bull; <a href="./0006-state-management-signals-vs-use-state.html">Next &rarr;</a></p>
+  </footer>
+</body>
+</html>

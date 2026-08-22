@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0018: AI-Assisted Browser Testing & Network Mocking (Chrome DevTools MCP & MSW)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header>
+    <nav class="lesson-nav">
+      <a href="../index.html" class="nav-home">&larr; Course Overview</a>
+      <div class="nav-arrows">
+        <a href="./0017-component-integration-testing-testbed-vs-vitest-rtl.html" class="nav-prev">&larr; Previous</a>
+        <a href="./0019-monorepos-workspace-tooling-turborepo-nx.html" class="nav-next">Next &rarr;</a>
+      </div>
+    </nav>
+    <h1>Lesson 0018: AI-Assisted Browser Testing &amp; Network Mocking</h1>
+    <div class="subtitle">Translating Angular Protractor, Cypress, and HttpTestingController to Chrome DevTools MCP, AI-driven browser verification loops, and Mock Service Worker (MSW v2)</div>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. AI Browser Testing &amp; Network Mocking Translation Matrix</h2>
+      <p>In enterprise Angular architectures, integration and end-to-end testing historically meant writing rigid, imperative test scripts in Protractor or Cypress, while network-layer mocking was tied exclusively to Angular's <code>HttpClientTestingModule</code> and <code>HttpTestingController</code>. In modern AI-augmented React development, engineers use <strong>Chrome DevTools MCP</strong> (Model Context Protocol) to let AI agents autonomously inspect the accessibility tree, execute live browser validation loops, monitor console errors, and verify UI state, paired with <a href="https://www.npmjs.com/package/msw" target="_blank" rel="noopener"><strong>Mock Service Worker (MSW v2)</strong></a> for zero-deviation network mocking.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Angular (Web)</th>
+            <th>AI-Augmented React (Web)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Browser Verification Driver</strong></td>
+            <td>Protractor / Cypress test runners with brittle CSS/XPath locator scripts</td>
+            <td><strong>Chrome DevTools MCP &amp; AI Subagents:</strong> Direct browser control via Chrome DevTools Protocol, DOM snapshots, and console auditing</td>
+          </tr>
+          <tr>
+            <td><strong>Element Targeting</strong></td>
+            <td><code>cy.get('.btn-submit')</code> / <code>element(by.css(...))</code></td>
+            <td><strong>Accessibility Tree &amp; Semantic Role Inspection:</strong> Agents query accessible names, roles, and bounding boxes via DevTools MCP tools</td>
+          </tr>
+          <tr>
+            <td><strong>Network Mocking Layer</strong></td>
+            <td><code>HttpTestingController</code> (Locked into unit-test fixtures)</td>
+            <td><a href="https://www.npmjs.com/package/msw" target="_blank" rel="noopener"><strong>MSW v2</strong></a> (<code>msw</code>): Intercepts requests at the network layer via Service Worker (browser) and Node interceptor (tests/dev)</td>
+          </tr>
+          <tr>
+            <td><strong>Mock Handler Definition</strong></td>
+            <td><code>httpMock.expectOne('/api/users').flush(mockData)</code></td>
+            <td><code>http.get('/api/users', () =&gt; HttpResponse.json(mockData))</code></td>
+          </tr>
+          <tr>
+            <td><strong>Error &amp; Performance Inspection</strong></td>
+            <td>Custom Karma/Cypress console listeners</td>
+            <td>Chrome DevTools MCP <code>list_network_requests</code>, <code>get_console_logs</code>, and Core Web Vitals performance inspection</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <strong>📦 The AI Browser Testing &amp; Mocking Stack</strong>
+        <p>Combine MSW v2 for mock servers with Chrome DevTools MCP for agentic validation:</p>
+        <pre><code>npm install -D msw</code></pre>
+        <ul>
+          <li><a href="https://www.npmjs.com/package/msw" target="_blank" rel="noopener"><strong><code>msw</code></strong></a>: Industry standard API mocking for browser and Node.js without touching production code.</li>
+          <li><strong>Chrome DevTools MCP</strong>: Integrates directly into AI pair programmers to evaluate DOM snapshots, trigger user interactions, inspect console errors, and verify layout rendering.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Architecture: Single Source of Truth for Network Mocks (MSW v2)</h2>
+      <p>Unlike Angular's <code>HttpTestingController</code> which only works inside isolated Angular test suites, MSW mock handlers run universally across <strong>Vitest unit tests</strong>, <strong>AI-driven browser verification sessions</strong>, and <strong>local development</strong>:</p>
+
+      <div class="callout tip">
+        <strong>Universal MSW Handler Definition (<code>src/mocks/handlers.ts</code>):</strong>
+        <pre><code>import { http, HttpResponse } from 'msw';
+
+export const handlers = [
+  http.get('/api/user/profile', () => {
+    return HttpResponse.json({
+      id: 'usr_100',
+      name: 'Sarah Connor',
+      role: 'Staff Engineer'
+    });
+  }),
+
+  http.post('/api/auth/login', async ({ request }) => {
+    const body = (await request.json()) as { email: string };
+    return HttpResponse.json({
+      token: 'jwt_secure_session_token',
+      user: { email: body.email, role: 'Admin' }
+    });
+  })
+];</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Side-by-Side Code Comparison: Testing an Authentication Flow</h2>
+
+      <div class="code-comparison">
+        <div>
+          <h3>Angular Cypress Imperative Test Script</h3>
+          <pre><code>// auth.cy.ts (Cypress)
+describe('Authentication Flow', () => {
+  beforeEach(() => {
+    cy.intercept('POST', '/api/auth/login', {
+      statusCode: 200,
+      body: { token: 'sample_token' }
+    }).as('loginRequest');
+  });
+
+  it('logs in successfully with valid credentials', () => {
+    cy.visit('/login');
+
+    cy.get('input[name="email"]').type('lead@angular.io');
+    cy.get('input[name="password"]').type('secret123');
+    cy.get('button.login-btn').click();
+
+    cy.wait('@loginRequest');
+    cy.url().should('include', '/dashboard');
+    cy.contains('Welcome back').should('be.visible');
+  });
+});</code></pre>
+        </div>
+
+        <div>
+          <h3>AI-Assisted Browser Verification (Chrome DevTools MCP)</h3>
+          <pre><code>// MSW Browser Worker setup: src/mocks/browser.ts
+import { setupWorker } from 'msw/browser';
+import { handlers } from './handlers';
+
+export const worker = setupWorker(...handlers);
+// In dev / test mode: worker.start();
+
+/*
+ * AI Agent Verification Flow via Chrome DevTools MCP:
+ * 1. Navigate to: http://localhost:3000/login
+ * 2. Tool: read_dom / get_accessibility_tree
+ *    - Locates input[aria-label="Email Address"]
+ *    - Locates input[aria-label="Password"]
+ *    - Locates button[role="button"][name="Sign In"]
+ * 3. Tool: type_text / click_element
+ *    - Types 'lead@angular.io' & 'secret123'
+ *    - Clicks 'Sign In' button
+ * 4. Tool: inspect_console_logs & get_network_activity
+ *    - Verifies POST /api/auth/login returned 200 OK (MSW)
+ *    - Asserts 0 console errors logged
+ * 5. Tool: take_screenshot / assert_dom
+ *    - Confirms '/dashboard' rendered with 'Welcome back'
+ */</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Key Architectural Takeaways for Angular Leads</h2>
+      <div class="callout tip">
+        <ul>
+          <li><strong>Autonomous Accessibility Audits</strong>: Using Chrome DevTools MCP allows AI tools to validate ARIA roles, color contrast, and keyboard navigation directly during development cycles without waiting for slow CI test runs.</li>
+          <li><strong>Zero Mocking Code in Production</strong>: MSW runs at the Service Worker boundary in the browser, ensuring your React components make standard <code>fetch()</code> calls with 100% clean production builds.</li>
+          <li><strong>Live Console &amp; Network Assertion</strong>: DevTools MCP exposes uncaught promise rejections, React hydration mismatches, and failed network requests directly to the verification agent.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Official Documentation References &amp; NPM Packages</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/msw" target="_blank" rel="noopener"><strong>msw (npm)</strong></a> &bull; <a href="https://mswjs.io" target="_blank" rel="noopener">Mock Service Worker Official Documentation</a></li>
+        <li><a href="https://developer.chrome.com/docs/devtools" target="_blank" rel="noopener"><strong>Chrome DevTools</strong></a> &bull; <a href="https://developer.chrome.com/docs/devtools/overview" target="_blank" rel="noopener">Chrome DevTools Architecture &amp; Automation Guides</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>React Web Learning Workspace &bull; <a href="../index.html">Course Overview</a> &bull; <a href="./0017-component-integration-testing-testbed-vs-vitest-rtl.html">&larr; Previous</a> &bull; <a href="./0019-monorepos-workspace-tooling-turborepo-nx.html">Next &rarr;</a></p>
+  </footer>
+</body>
+</html>

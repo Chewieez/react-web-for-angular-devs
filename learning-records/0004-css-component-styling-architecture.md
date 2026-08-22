@@ -1,4 +1,4 @@
-# Learning Record 0010: CSS & Component Styling Architecture
+# Learning Record 0004: CSS & Component Styling Architecture
 
 ## Date: 2026-08-16
 

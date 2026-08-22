@@ -1,4 +1,4 @@
-# Learning Record 0012: Complex Global State (NgRx vs. Zustand & Redux Toolkit)
+# Learning Record 0013: Complex Global State (NgRx vs. Zustand & Redux Toolkit)
 
 ## Date: 2026-08-16
 

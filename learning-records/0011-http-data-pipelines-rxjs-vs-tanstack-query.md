@@ -1,4 +1,4 @@
-# Learning Record 0009: HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)
+# Learning Record 0011: HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)
 
 ## Date: 2026-08-16
 

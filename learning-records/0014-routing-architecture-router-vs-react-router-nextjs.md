@@ -1,4 +1,4 @@
-# Learning Record 0008: Routing Architecture (RouterModule vs. React Router & Next.js)
+# Learning Record 0014: Routing Architecture (RouterModule vs. React Router & Next.js)
 
 ## Date: 2026-08-16
 

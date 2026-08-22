@@ -1,4 +1,4 @@
-# Learning Record 0005: Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)
+# Learning Record 0009: Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)
 
 ## Date: 2026-08-15
 

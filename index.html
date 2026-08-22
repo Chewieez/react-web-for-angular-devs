@@ -25,6 +25,12 @@
           </tr>
         </thead>
         <tbody>
+          <!-- Pillar 1 -->
+          <tr style="background: rgba(97, 218, 251, 0.08);">
+            <td colspan="4" style="font-weight: 700; color: var(--accent-color); padding-top: 14px; padding-bottom: 10px;">
+              🏛️ PILLAR 1: Component &amp; UI Architecture (Foundations)
+            </td>
+          </tr>
           <tr>
             <td><strong>0001</strong></td>
             <td><a href="./lessons/0001-angular-to-react-web-mental-model.html">Angular Lead to React Web Mental Model</a></td>
@@ -33,80 +39,144 @@
           </tr>
           <tr>
             <td><strong>0002</strong></td>
-            <td><a href="./lessons/0002-angular-templates-directives-vs-jsx.html">Angular Templates & Directives vs. JSX</a></td>
+            <td><a href="./lessons/0002-angular-templates-directives-vs-jsx.html">Angular Templates &amp; Directives vs. JSX</a></td>
             <td><code>*ngIf</code>, <code>*ngFor</code>, <code>[ngClass]</code>, <code>[ngStyle]</code>, pipes vs JSX expressions, <code>.map()</code>, <code>clsx</code>.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0003</strong></td>
-            <td><a href="./lessons/0003-components-props-content-projection.html">Components, Props & Content Projection</a></td>
+            <td><a href="./lessons/0003-components-props-content-projection.html">Components, Props &amp; Content Projection</a></td>
             <td><code>@Input()</code>, <code>@Output() EventEmitter</code>, <code>&lt;ng-content&gt;</code> vs <code>props</code>, callbacks, and <code>children</code> slot patterns.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0004</strong></td>
-            <td><a href="./lessons/0004-state-management-signals-vs-use-state.html">State Management Fundamentals (Signals vs. useState)</a></td>
-            <td>Angular Signals (<code>signal</code>, <code>computed</code>, <code>effect</code>) vs React <code>useState</code>, <code>useMemo</code>, <code>useEffect</code>.</td>
+            <td><a href="./lessons/0004-css-component-styling-architecture.html">CSS &amp; Component Styling Architecture</a></td>
+            <td>ViewEncapsulation (Emulated/ShadowDOM) &amp; SCSS vs CSS Modules, Tailwind CSS, and CSS-in-JS.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0005</strong></td>
-            <td><a href="./lessons/0005-forms-reactive-forms-vs-react-hook-form-zod.html">Forms Masterclass (Reactive Forms vs. React Hook Form & Zod)</a></td>
-            <td><code>FormGroup</code>, <code>FormControl</code>, custom validators vs React Hook Form, controlled inputs, and Zod schemas.</td>
+            <td><a href="./lessons/0005-design-system-architecture-headless-ui-cva.html">Enterprise Design Systems &amp; Headless UI</a></td>
+            <td>Angular Material / Angular CDK vs Radix UI, <code>shadcn/ui</code>, <code>class-variance-authority</code> (CVA), and <code>tailwind-merge</code>.</td>
             <td>✅ Active</td>
+          </tr>
+
+          <!-- Pillar 2 -->
+          <tr style="background: rgba(97, 218, 251, 0.08);">
+            <td colspan="4" style="font-weight: 700; color: var(--accent-color); padding-top: 14px; padding-bottom: 10px;">
+              ⚡ PILLAR 2: Reactivity, State &amp; Forms
+            </td>
           </tr>
           <tr>
             <td><strong>0006</strong></td>
-            <td><a href="./lessons/0006-angular-services-di-vs-context-custom-hooks.html">Angular Services & DI vs. React Context & Custom Hooks</a></td>
-            <td><code>@Injectable({ providedIn: 'root' })</code> vs <code>createContext</code>, <code>&lt;Provider&gt;</code>, and composable custom hooks.</td>
+            <td><a href="./lessons/0006-state-management-signals-vs-use-state.html">State Management Fundamentals (Signals vs. useState)</a></td>
+            <td>Angular Signals (<code>signal</code>, <code>computed</code>, <code>effect</code>) vs React <code>useState</code>, <code>useMemo</code>, <code>useEffect</code>.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0007</strong></td>
-            <td><a href="./lessons/0007-lifecycle-hooks-vs-use-effect-refs.html">Lifecycle Hooks vs. useEffect & Refs</a></td>
+            <td><a href="./lessons/0007-lifecycle-hooks-vs-use-effect-refs.html">Lifecycle Hooks vs. useEffect &amp; Refs</a></td>
             <td><code>ngOnInit</code>, <code>ngOnDestroy</code>, <code>ngOnChanges</code>, <code>@ViewChild</code> vs <code>useEffect</code> dependency arrays, cleanup, and <code>useRef</code>.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0008</strong></td>
-            <td><a href="./lessons/0008-routing-architecture-router-vs-react-router-nextjs.html">Routing Architecture (RouterModule vs. React Router & Next.js)</a></td>
-            <td>Lazy loading, Route Guards (<code>CanActivate</code>), dynamic params, and layout route hierarchies.</td>
+            <td><a href="./lessons/0008-angular-services-di-vs-context-custom-hooks.html">Angular Services &amp; DI vs. React Context &amp; Custom Hooks</a></td>
+            <td><code>@Injectable({ providedIn: 'root' })</code> vs <code>createContext</code>, <code>&lt;Provider&gt;</code>, and composable custom hooks.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0009</strong></td>
-            <td><a href="./lessons/0009-http-data-pipelines-rxjs-vs-tanstack-query.html">HTTP Data Pipelines & Server State (RxJS vs. TanStack Query)</a></td>
-            <td><code>HttpClient</code> Observables & <code>| async</code> pipe vs <code>fetch</code> + TanStack Query (<code>useQuery</code>, <code>useMutation</code>, caching).</td>
+            <td><a href="./lessons/0009-forms-reactive-forms-vs-react-hook-form-zod.html">Forms Masterclass (Reactive Forms vs. React Hook Form &amp; Zod)</a></td>
+            <td><code>FormGroup</code>, <code>FormControl</code>, custom validators vs React Hook Form, controlled inputs, and Zod schemas.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0010</strong></td>
-            <td><a href="./lessons/0010-css-component-styling-architecture.html">CSS & Component Styling Architecture</a></td>
-            <td>ViewEncapsulation (Emulated/ShadowDOM) & SCSS vs CSS Modules, Tailwind CSS, and CSS-in-JS.</td>
+            <td><a href="./lessons/0010-react-19-actions-use-action-state-optimistic.html">React 19 Actions, Form State &amp; Optimistic UI</a></td>
+            <td><code>(ngSubmit)</code> &amp; manual rollbacks vs <code>useActionState</code>, <code>useOptimistic</code>, <code>useFormStatus</code>, and form actions.</td>
             <td>✅ Active</td>
+          </tr>
+
+          <!-- Pillar 3 -->
+          <tr style="background: rgba(97, 218, 251, 0.08);">
+            <td colspan="4" style="font-weight: 700; color: var(--accent-color); padding-top: 14px; padding-bottom: 10px;">
+              🌐 PILLAR 3: Data Pipelines, Server State &amp; Global Stores
+            </td>
           </tr>
           <tr>
             <td><strong>0011</strong></td>
-            <td><a href="./lessons/0011-performance-optimization-reconciliation.html">Performance Optimization & Reconciliation</a></td>
-            <td>Zone.js vs Virtual DOM Reconciliation, <code>OnPush</code> strategy vs <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code>.</td>
+            <td><a href="./lessons/0011-http-data-pipelines-rxjs-vs-tanstack-query.html">HTTP Data Pipelines &amp; Server State (RxJS vs. TanStack Query)</a></td>
+            <td><code>HttpClient</code> Observables &amp; <code>| async</code> pipe vs <code>fetch</code> + TanStack Query (<code>useQuery</code>, <code>useMutation</code>, caching).</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0012</strong></td>
-            <td><a href="./lessons/0012-complex-global-state-ngrx-vs-zustand-rtk.html">Complex Global State (NgRx vs. Zustand & Redux Toolkit)</a></td>
-            <td>Actions, Reducers, Effects, Selectors vs Zustand lightweight atomic stores and RTK slices.</td>
+            <td><a href="./lessons/0012-real-time-streaming-websockets.html">Real-Time Data Pipelines &amp; WebSockets</a></td>
+            <td>RxJS <code>webSocket()</code> &amp; <code>| async</code> pipe vs <code>useWebSocket</code> streaming hooks and TanStack Query live cache updates.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
             <td><strong>0013</strong></td>
-            <td><a href="./lessons/0013-server-side-rendering-ssr-react-server-components-rsc.html">Server-Side Rendering (SSR) & React Server Components (RSC)</a></td>
+            <td><a href="./lessons/0013-complex-global-state-ngrx-vs-zustand-rtk.html">Complex Global State (NgRx vs. Zustand &amp; Redux Toolkit)</a></td>
+            <td>Actions, Reducers, Effects, Selectors vs Zustand lightweight atomic stores and RTK slices.</td>
+            <td>✅ Active</td>
+          </tr>
+
+          <!-- Pillar 4 -->
+          <tr style="background: rgba(97, 218, 251, 0.08);">
+            <td colspan="4" style="font-weight: 700; color: var(--accent-color); padding-top: 14px; padding-bottom: 10px;">
+              🚀 PILLAR 4: Routing, Full-Stack React &amp; Performance
+            </td>
+          </tr>
+          <tr>
+            <td><strong>0014</strong></td>
+            <td><a href="./lessons/0014-routing-architecture-router-vs-react-router-nextjs.html">Routing Architecture (RouterModule vs. React Router &amp; Next.js)</a></td>
+            <td>Lazy loading, Route Guards (<code>CanActivate</code>), dynamic params, and layout route hierarchies.</td>
+            <td>✅ Active</td>
+          </tr>
+          <tr>
+            <td><strong>0015</strong></td>
+            <td><a href="./lessons/0015-server-side-rendering-ssr-react-server-components-rsc.html">Server-Side Rendering (SSR) &amp; React Server Components (RSC)</a></td>
             <td>Angular Universal / SSR Hydration vs Next.js App Router, RSC, <code>'use client'</code>, and streaming.</td>
             <td>✅ Active</td>
           </tr>
           <tr>
-            <td><strong>0014</strong></td>
-            <td><a href="./lessons/0014-component-integration-testing-testbed-vs-vitest-rtl.html">Component & Integration Testing (TestBed vs. Vitest & RTL)</a></td>
+            <td><strong>0016</strong></td>
+            <td><a href="./lessons/0016-performance-optimization-reconciliation.html">Performance Optimization &amp; Reconciliation</a></td>
+            <td>Zone.js vs Virtual DOM Reconciliation, <code>OnPush</code> strategy vs <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code>.</td>
+            <td>✅ Active</td>
+          </tr>
+
+          <!-- Pillar 5 -->
+          <tr style="background: rgba(97, 218, 251, 0.08);">
+            <td colspan="4" style="font-weight: 700; color: var(--accent-color); padding-top: 14px; padding-bottom: 10px;">
+              🛡️ PILLAR 5: Testing, Monorepos &amp; Enterprise Scale
+            </td>
+          </tr>
+          <tr>
+            <td><strong>0017</strong></td>
+            <td><a href="./lessons/0017-component-integration-testing-testbed-vs-vitest-rtl.html">Component &amp; Integration Testing (TestBed vs. Vitest &amp; RTL)</a></td>
             <td><code>TestBed</code>, <code>By.css</code> vs Vitest + React Testing Library (<code>render</code>, <code>screen</code>, <code>userEvent</code>, accessibility queries).</td>
+            <td>✅ Active</td>
+          </tr>
+          <tr>
+            <td><strong>0018</strong></td>
+            <td><a href="./lessons/0018-browser-testing-chrome-devtools-mcp-msw.html">AI-Assisted Browser Testing &amp; Network Mocking</a></td>
+            <td>Protractor / Cypress &amp; <code>HttpTestingController</code> vs Chrome DevTools MCP (AI browser verification) and Mock Service Worker (MSW v2).</td>
+            <td>✅ Active</td>
+          </tr>
+          <tr>
+            <td><strong>0019</strong></td>
+            <td><a href="./lessons/0019-monorepos-workspace-tooling-turborepo-nx.html">Enterprise Monorepos &amp; Workspace Tooling</a></td>
+            <td><code>angular.json</code> multi-projects &amp; <code>ng g library</code> vs Turborepo / Nx, internal packages, and build caching.</td>
+            <td>✅ Active</td>
+          </tr>
+          <tr>
+            <td><strong>0020</strong></td>
+            <td><a href="./lessons/0020-microfrontends-module-federation.html">Microfrontends &amp; Module Federation</a></td>
+            <td><code>@angular-architects/module-federation</code> vs Module Federation 2.0 (Rsbuild/Webpack), dynamic remotes, and error boundaries.</td>
             <td>✅ Active</td>
           </tr>
         </tbody>
@@ -155,6 +225,16 @@
             <td><code>props.children</code> / Named Slot Props</td>
           </tr>
           <tr>
+            <td><strong>Component Styling</strong></td>
+            <td><code>ViewEncapsulation</code> &amp; SCSS</td>
+            <td>Tailwind CSS + CSS Modules (<code>.module.css</code>) + CVA</td>
+          </tr>
+          <tr>
+            <td><strong>Design System Primitives</strong></td>
+            <td>Angular CDK &amp; Angular Material</td>
+            <td>Radix UI Primitives + <code>class-variance-authority</code> + <code>shadcn/ui</code></td>
+          </tr>
+          <tr>
             <td><strong>Reactive State</strong></td>
             <td>Angular Signals (<code>signal()</code>) / <code>BehaviorSubject</code></td>
             <td><code>useState()</code> Hook / Zustand</td>
@@ -165,8 +245,8 @@
             <td><code>useMemo(() => ...)</code></td>
           </tr>
           <tr>
-            <td><strong>Side Effects</strong></td>
-            <td><code>effect(() => ...)</code> / <code>ngOnInit</code></td>
+            <td><strong>Side Effects &amp; Lifecycles</strong></td>
+            <td><code>effect(() => ...)</code> / <code>ngOnInit</code> / <code>ngOnDestroy</code></td>
             <td><code>useEffect(() => ..., [deps])</code></td>
           </tr>
           <tr>
@@ -175,14 +255,14 @@
             <td>React Context (<code>createContext</code>) / Custom Hook</td>
           </tr>
           <tr>
-            <td><strong>DOM Reference</strong></td>
-            <td><code>@ViewChild('myInput')</code></td>
-            <td><code>useRef&lt;HTMLInputElement&gt;(null)</code></td>
-          </tr>
-          <tr>
             <td><strong>Forms</strong></td>
             <td><code>ReactiveFormsModule</code> (<code>FormGroup</code>)</td>
             <td>React Hook Form (<code>useForm</code>) + Zod</td>
+          </tr>
+          <tr>
+            <td><strong>Form Actions &amp; Optimistic State</strong></td>
+            <td><code>(ngSubmit)</code> + manual RxJS rollbacks</td>
+            <td>React 19 Actions (<code>useActionState</code>, <code>useOptimistic</code>)</td>
           </tr>
           <tr>
             <td><strong>HTTP Fetching</strong></td>
@@ -190,14 +270,9 @@
             <td><code>fetch</code> + TanStack React Query</td>
           </tr>
           <tr>
-            <td><strong>Change Detection</strong></td>
-            <td>Zone.js / Signal dirty checking</td>
-            <td>Virtual DOM Reconciliation + <code>React.memo</code></td>
-          </tr>
-          <tr>
-            <td><strong>Component Styling</strong></td>
-            <td><code>ViewEncapsulation</code> & SCSS</td>
-            <td>Tailwind CSS + CSS Modules (<code>.module.css</code>) + CVA</td>
+            <td><strong>Real-Time Pipelines</strong></td>
+            <td>RxJS <code>webSocket()</code> &amp; <code>| async</code></td>
+            <td><code>react-use-websocket</code> + TanStack Query cache invalidation</td>
           </tr>
           <tr>
             <td><strong>Global State</strong></td>
@@ -205,14 +280,39 @@
             <td>Zustand atomic stores / Redux Toolkit</td>
           </tr>
           <tr>
-            <td><strong>SSR & Hydration</strong></td>
+            <td><strong>Routing &amp; Guards</strong></td>
+            <td><code>RouterModule</code> + <code>CanActivate</code></td>
+            <td>React Router v6+ / Next.js App Router</td>
+          </tr>
+          <tr>
+            <td><strong>SSR &amp; Hydration</strong></td>
             <td>Angular Universal / <code>provideClientHydration</code></td>
-            <td>Next.js App Router & React Server Components (RSC)</td>
+            <td>Next.js App Router &amp; React Server Components (RSC)</td>
+          </tr>
+          <tr>
+            <td><strong>Change Detection / Reconciliation</strong></td>
+            <td>Zone.js / Signal dirty checking / <code>OnPush</code></td>
+            <td>Virtual DOM Reconciliation + <code>React.memo</code></td>
           </tr>
           <tr>
             <td><strong>Component Testing</strong></td>
-            <td><code>TestBed</code> & <code>By.css</code></td>
+            <td><code>TestBed</code> &amp; <code>By.css</code></td>
             <td>Vitest + React Testing Library (<code>userEvent</code>, <code>getByRole</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>AI Browser Testing &amp; Mocking</strong></td>
+            <td>Protractor / Cypress &amp; <code>HttpTestingController</code></td>
+            <td>Chrome DevTools MCP &amp; Mock Service Worker (MSW v2)</td>
+          </tr>
+          <tr>
+            <td><strong>Monorepo Tooling</strong></td>
+            <td><code>angular.json</code> &amp; <code>ng g library</code></td>
+            <td>Turborepo / Nx + Internal Workspace Packages</td>
+          </tr>
+          <tr>
+            <td><strong>Microfrontends</strong></td>
+            <td><code>@angular-architects/module-federation</code></td>
+            <td>Module Federation 2.0 (<code>@module-federation/enhanced</code>)</td>
           </tr>
         </tbody>
       </table>
